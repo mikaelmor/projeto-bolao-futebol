@@ -1,1 +1,1 @@
-Estre projeto veio para entreter aqueles que sao amantes por futebol e apostas!
+Este projeto veio para entreter aqueles que são amantes por futebol e apostas!
