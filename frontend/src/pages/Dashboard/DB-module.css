@@ -1,17 +1,15 @@
-.container {
-    width: 100%;
-    max-width: 1440px;
-    margin-top: 0 auto;
+
+.min-h-screen, flex flex-col {
+   width: 100vw;
+    max-width: none;
+    margin-top: 0;
     background-image: url("./src/imagens/campo de futebol.webp");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;   
-    min-height: 100vh;
-    background-attachment: fixed;
-   
-    
-}
+    min-height: 100vw;
 
+}
 .title {
     text-align: center;
     margin: 24px 0;
@@ -70,3 +68,4 @@
     margin: 24px 18px 0 22px;
     fill: #fcfafb;
 }
+

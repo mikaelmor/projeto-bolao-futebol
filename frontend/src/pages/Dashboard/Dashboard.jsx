@@ -5,6 +5,7 @@ import {Swiper, SwiperSlide } from 'swiper/react'
 import { useNavigate } from "react-router-dom";
 
 
+
 function Dashboard() {
 
     const navigate = useNavigate();
@@ -12,10 +13,9 @@ function Dashboard() {
 
 
     return(
-
-        
-        <div className="container">
-            <h1 className="title">Bolão Copa do Mundo 2026</h1>
+               
+        <div className="min-h-screen flex flex-col">
+            <div className="title">GOALPOINT</div>
               <div className="styled-wrapper back-button-position">
                 <button className="button" onClick={() => navigate("/login")} type="button">
                     <div className="button-box">
@@ -33,9 +33,9 @@ function Dashboard() {
              </button>
         </div>
 
-
-              
         </div>
+
+        
     )
 }
 

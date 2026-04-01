@@ -57,7 +57,7 @@ const Login = ()=> {
             <div className="recall-forget">
                 <label>
                     <input type="checkbox" />
-                    Lembre de mim
+                    Lembre de mim 
                 </label>
                 <a href="/esqueceu-senha" onClick={(e) => { e.preventDefault(); navigate("/esqueceu-senha"); }}>Esqueceu a senha ?</a>
             </div>
