@@ -2,39 +2,109 @@ import React from 'react'
 import "./DB-module.css";
 import {useState, useEffect} from 'react'
 import {Swiper, SwiperSlide } from 'swiper/react'
-import { useNavigate } from "react-router-dom";
+import {EffectCoverflow, Pagination, Navigation} from 'swiper/modules';
+import { Form, useNavigate } from "react-router-dom";
+import { Link } from 'react-router-dom';
+import logo from "../../imagens/GoalPoint LOGO.png"
 
+
+import 'swiper/css';
+import 'swiper/css/effect-coverflow';
+import 'swiper/css/pagination';
+import 'swiper/css/navigation';
+
+import slide_imagem1 from "../../imagens/Messi.webp";
+import slide_imagem2 from "../../imagens/mbappe.webp";
+import slide_imagem3 from "../../imagens/thomas muller.webp";
 
 
 function Dashboard() {
 
     const navigate = useNavigate();
 
-
-
     return(
                
-        <div className="min-h-screen flex flex-col">
-            <div className="title">GOALPOINT</div>
-              <div className="styled-wrapper back-button-position">
-                <button className="button" onClick={() => navigate("/login")} type="button">
-                    <div className="button-box">
-                        <span className="button-elem">
-                            <svg viewBox="0 0 46 40" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M46 20.038c0-.7-.3-1.5-.8-2.1l-16-17c-1.1-1-3.2-1.4-4.4-.3-1.2 1.1-1.2 3.3 0 4.4l11.3 11.9H3c-1.7 0-3 1.3-3 3s1.3 3 3 3h33.1l-11.3 11.9c-1.2 1.1-1.2 3.3 0 4.4 1.2 1.1 3.3.8 4.4-.3l16-17c.5-.5.8-1.1.8-1.9z" />
-                            </svg>
-                        </span>
-                        <span className="button-elem">
-                            <svg viewBox="0 0 46 40">
-                                <path d="M46 20.038c0-.7-.3-1.5-.8-2.1l-16-17c-1.1-1-3.2-1.4-4.4-.3-1.2 1.1-1.2 3.3 0 4.4l11.3 11.9H3c-1.7 0-3 1.3-3 3s1.3 3 3 3h33.1l-11.3 11.9c-1.2 1.1-1.2 3.3 0 4.4 1.2 1.1 3.3.8 4.4-.3l16-17c.5-.5.8-1.1.8-1.9z" />
-                            </svg>
-                        </span>
-                    </div>
-             </button>
+        <div className="main">
+            <div className="w-full flex items-center justify-between px-8 py-4 bg-black/40 backdrop-blur-md">
+
+                <div className="flex items-center gap-1">
+                    <img src={logo} alt="logo" className="w-10 h-10 object-contain" />
+                    <h1 className="text-white italic font-black tracking-0.2em">
+                        GOALPOINT
+                    </h1>
+                </div>
+
+               <div className="flex items-center gap-[12px] font-style: italic text-white font-mono text-lg ">
+                    <Link to="/ranking" 
+                    className="hover:text-lime-400 transition">Ranking
+                    </Link>
+                 
+                    <Link to="/curiosidades"className="hover:text-lime-400 transition">
+                    Curiosidades
+                    </Link>
+</div>
+
+            </div>
+
+            <button className="brasil-button"
+            onClick={() => navigate("/login")}
+            type="button"
+            >
+        <div className="blob1"></div>
+        <div className="inner"> ←
+               </div>
+            </button>
+
+
+        <div className='container'>
+            <Swiper
+            effect={'coverflow'}
+            grabCursor= {true}
+            centeredSlides= {true}
+            loop={true}
+            slidesPerView={'auto'}
+            coverflowEffect={
+            {
+                rotate: 0,
+                stretch: 0,
+                depth: 100,
+                modifier: 2.5,
+            }
+        }
+            pagination={{el:'.swiper-pagination',clickable:true}}
+            navigation={{
+                nextEl:'.swiper-button-next',
+                prevEl:'.swiper-button-prev',
+                clickable:true,
+            }}
+            modules={[EffectCoverflow, Navigation, Pagination]}
+            className='swiper_container'
+
+            >
+                <SwiperSlide>
+                    <img src={slide_imagem1} alt="slide_image" />
+                </SwiperSlide>
+                 <SwiperSlide>
+                    <img src={slide_imagem2} alt="slide_image" />
+                </SwiperSlide>
+                 <SwiperSlide>
+                    <img src={slide_imagem3} alt="slide_image" />
+                </SwiperSlide>
+
+                <div className="slider-controller">
+                    <div className="swiper-button-prev slider-arrow"></div>
+                    <div className="swiper-button-next slider-arrow"></div>
+                    <div className="swiper-pagination"></div>
+                </div>
+
+            </Swiper>
         </div>
+
 
         </div>
 
+
+            
         
     )
 }

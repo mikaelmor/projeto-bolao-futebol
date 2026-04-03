@@ -1,5 +1,5 @@
 
-.min-h-screen, flex flex-col {
+.main {
    width: 100vw;
     max-width: none;
     margin-top: 0;
@@ -7,8 +7,7 @@
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;   
-    min-height: 100vw;
-
+    min-height: 100vh;
 }
 .title {
     text-align: center;
@@ -17,55 +16,63 @@
     font-family: Arial, Helvetica, sans-serif;
 }
 
-
-.styled-wrapper .button:before {
-    content: "";
-    position: absolute;
-    border-radius: 50%;
-    inset: 7px;
-    border: 3px solid white; 
-    transition: opacity 0.4s cubic-bezier(0.77, 0, 0.175, 1) 80ms, transform 0.5s cubic-bezier(0.455, 0.03, 0.515, 0.955) 80ms;
+.brasil-button {
+  cursor: pointer;
+  font-family: sans-serif;
+  font-weight: bold;
+  font-size: 0.95rem;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  color: #ffffff;
+  background: linear-gradient(135deg, #009c3b, #002776);
+  transition: all 0.2s ease;
+  margin: 10px;
 }
 
-.styled-wrapper .button:after {
-    content: "";
-    position: absolute;
-    border-radius: 50%;
-    inset: 7px;
-    border: 4px solid #599a53; 
-    transform: scale(1.3);
-    transition: opacity 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    opacity: 0;
+.brasil-button:hover {
+  background: linear-gradient(135deg, #00b140, #0039a6);
+}
+.brasil-button:active {
+  transform: scale(0.96);
 }
 
-.styled-wrapper .button:hover:before {
-    opacity: 0;
-    transform: scale(0.7);
+/* container geral do swiper */
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 40px;
 }
 
-.styled-wrapper .button:hover:after {
-    opacity: 1;
-    transform: scale(1);
+/* swiper */
+.swiper_container {
+  width: 100%;
+  max-width: 330px;
 }
 
-.styled-wrapper .button-box {
-    display: flex;
-    position: absolute;
-    top: 0;
-    left: 0;
-    transform: scaleX(-1); 
+/* slide */
+.swiper-slide {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.styled-wrapper .button:hover .button-box {
-    transition: 0.4s;
-    transform: translateX(69px) scaleX(-1); 
+/* imagem */
+.swiper-slide img {
+  width: 340px;
+  height: 220px;
+  object-fit: cover;
+
+  border-radius: 12px;
+  border: 3px solid #ffffff;
+
+  transition: transform 0.3s;
 }
 
-.styled-wrapper .button-elem {
-    display: block;
-    width: 30px;
-    height: 30px;
-    margin: 24px 18px 0 22px;
-    fill: #fcfafb;
+/* destaque no slide ativo */
+.swiper-slide-active img {
+  transform: scale(1.1);
+  border: 3px solid #84cc16; /* lime-400 */
 }
 

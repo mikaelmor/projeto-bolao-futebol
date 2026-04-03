@@ -6,6 +6,8 @@ import Registro from "./pages/Registro/Register";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Suporte from "./pages/FalemConosco";
 import EsqueceuSenha from "./pages/Esqueceu-Senha";
+import Ranking from "./pages/Ranking/Ranking";
+import Curiosidades from "./pages/Curiosidades/WorldCup-History";
 
 
 
@@ -22,7 +24,9 @@ const routes = createBrowserRouter([
  { path: "/registro", element: <Registro />},
  { path: "/dashboard", element: < Dashboard />},
  { path: "/suporte", element: < Suporte />},
-  { path: "/esqueceu-senha", element: < EsqueceuSenha />},
+ { path: "/esqueceu-senha", element: < EsqueceuSenha />},
+ { path: "/curiosidades", element: < Curiosidades />},
+ { path: "/ranking", element: < Ranking />},
   ],
  }
 ]);
