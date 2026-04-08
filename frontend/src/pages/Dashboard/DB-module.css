@@ -37,42 +37,46 @@
   transform: scale(0.96);
 }
 
-/* container geral do swiper */
+
 .container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 40px;
+ padding: 0 20px;
+ margin: auto;
 }
 
-/* swiper */
+
 .swiper_container {
   width: 100%;
-  max-width: 330px;
+  max-width: 750px;
 }
 
-/* slide */
+.swiper-pagination {
+  position: relative;
+  margin-left: -34px;
+  
+}
+
 .swiper-slide {
+  
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* imagem */
+
 .swiper-slide img {
-  width: 340px;
-  height: 220px;
+  width: 100%;
+  max-width: 650px;
+  height: 260px;          
   object-fit: cover;
+  border: none;          
 
-  border-radius: 12px;
-  border: 3px solid #ffffff;
-
-  transition: transform 0.3s;
+  transition: transform 0.3s, box-shadow 0.3s;
+ 
 }
 
-/* destaque no slide ativo */
+
 .swiper-slide-active img {
-  transform: scale(1.1);
-  border: 3px solid #84cc16; /* lime-400 */
+   transform: scale(1.03);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 

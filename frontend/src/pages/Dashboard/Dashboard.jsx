@@ -2,20 +2,20 @@ import React from 'react'
 import "./DB-module.css";
 import {useState, useEffect} from 'react'
 import {Swiper, SwiperSlide } from 'swiper/react'
-import {EffectCoverflow, Pagination, Navigation} from 'swiper/modules';
+import {Autoplay, Pagination, Navigation} from 'swiper/modules';
 import { Form, useNavigate } from "react-router-dom";
 import { Link } from 'react-router-dom';
+import { BsArrowLeftShort} from "react-icons/bs";
 import logo from "../../imagens/GoalPoint LOGO.png"
 
 
 import 'swiper/css';
-import 'swiper/css/effect-coverflow';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 
 import slide_imagem1 from "../../imagens/Messi.webp";
-import slide_imagem2 from "../../imagens/mbappe.webp";
-import slide_imagem3 from "../../imagens/thomas muller.webp";
+import slide_imagem2 from "../../imagens/Mbappe.webp";
+import slide_imagem3 from "../../imagens/babap.webp";
 
 
 function Dashboard() {
@@ -58,26 +58,18 @@ function Dashboard() {
 
         <div className='container'>
             <Swiper
-            effect={'coverflow'}
-            grabCursor= {true}
+            spaceBetween={30}
             centeredSlides= {true}
             loop={true}
             slidesPerView={'auto'}
-            coverflowEffect={
+            autoplay={
             {
-                rotate: 0,
-                stretch: 0,
-                depth: 100,
-                modifier: 2.5,
+                delay: 2400,
+                disableOnInteraction: false,
             }
         }
             pagination={{el:'.swiper-pagination',clickable:true}}
-            navigation={{
-                nextEl:'.swiper-button-next',
-                prevEl:'.swiper-button-prev',
-                clickable:true,
-            }}
-            modules={[EffectCoverflow, Navigation, Pagination]}
+            modules={[Autoplay, Navigation, Pagination]}
             className='swiper_container'
 
             >
