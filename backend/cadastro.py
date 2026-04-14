@@ -9,14 +9,18 @@ def _get_service() -> CadastroService:
 @cadastro_bp.post("/")
 def cadastrar():
     dados = request.get_json(silent=True) or {}
-    campos_obrigatorios = ["nome", "email", "cpf", "senha"]
+    campos_obrigatorios = ["nome", "sobrenome", "email", "cpf", "senha", "confirmar_senha"]
     ausentes = [c for c in campos_obrigatorios if not dados.get(c)]
     if ausentes: 
         return jsonify({"erro": "Campos obrigatorios ausentes", "campos": ausentes}), 422
     
+    if dados["senha"] != dados["confirmar_senha"]:
+        return jsonify({"erro": "As senhas não coincidem"}), 400
+    
     try:
         usuario = _get_service().cadastrar(
             nome=dados["nome"],
+            sobrenome=dados["sobrenome"],
             email=dados["email"],
             cpf=dados["cpf"],
             senha=dados["senha"],
@@ -30,7 +34,7 @@ def cadastrar():
 @cadastro_bp.post("/gerar-senha")
 def cadastrar_com_senha_gerada():
     dados = request.get_json(silent=True) or {}
-    campos_obrigatorios = ["nome", "email", "cpf"]
+    campos_obrigatorios = ["nome", "sobrenome", "email", "cpf"]
     ausentes = [c for c in campos_obrigatorios if not dados.get(c)]
     if ausentes:
         return jsonify({"erro": "Campos obrigatórios ausentes", "campos": ausentes}), 422
@@ -38,6 +42,7 @@ def cadastrar_com_senha_gerada():
     try:
         resultado = _get_service().cadastrar_com_senha_gerada(
             nome=dados["nome"],
+            sobrenome=dados["sobrenome"],
             email=dados["email"],
             cpf=dados["cpf"],
         )

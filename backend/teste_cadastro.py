@@ -66,6 +66,7 @@ class TestCadastroComSenhaGerada:
     def teste_cadastro_com_senha_gerada(self, service):
         resulatdo = service.cadastrar_com_senha_gerada(
             nome=DADOS_VALIDOS["nome"],
+            sobrenome=DADOS_VALIDOS["sobrenome"],
             email=DADOS_VALIDOS["email"],
             cpf=DADOS_VALIDOS["cpf"],
         )

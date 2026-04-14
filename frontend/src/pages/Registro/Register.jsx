@@ -1,4 +1,4 @@
-import { FaUser, FaLock, FaEnvelope, FaIdCard } from "react-icons/fa";
+import { FaUser, FaLock, FaLockOpen, FaEnvelope, FaIdCard } from "react-icons/fa";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -13,6 +13,9 @@ const Registro = () => {
         confirmPassword: ""
     });
 
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -20,16 +23,45 @@ const Registro = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        if (formData.password !== formData.confirmPassword) {
-            alert("As senhas não coincidem!");
+    const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (formData.password !== formData.confirmPassword) {
+        alert("As senhas não coincidem!");
+        return;
+    }
+
+    try {
+        const response = await fetch("http://localhost:5173/api/cadastro/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                nome: formData.nome,
+                sobrenome: formData.sobrenome,
+                email: formData.email,
+                cpf: formData.cpf,
+                senha: formData.password,
+                confirmar_senha: formData.confirmPassword
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(data.erro || "Erro ao cadastrar");
             return;
         }
-        alert("Enviando dados do registro: " + formData.nome + " " + formData.cpf);
 
+        alert("Cadastro realizado com sucesso");
         navigate("/login");
-    };
+
+    } catch (error) {
+        console.error(error);
+        alert("Erro ao conectar com o servidor");
+    }
+};
 
     return (
         <div className="Login">
@@ -75,15 +107,50 @@ const Registro = () => {
                     </div>
 
                     <div className="input-field">
-                        <input type="password" name="password" placeholder="Senha" required onChange={handleChange} />
-                        <FaLock className="icon" />
+                        <input 
+                    type={showPassword ? "text" : "password"}
+                    name="password" 
+                    placeholder="Senha" 
+                    required onChange={handleChange} 
+                    />
+                    {showPassword ? (
+                     <FaLockOpen 
+                    className="icon" 
+                    onClick={() => setShowPassword(false)} 
+                    style={{ cursor: "pointer" }}
+                    />
+                    ) : (
+                    <FaLock 
+                    className="icon" 
+                    onClick={() => setShowPassword(true)} 
+                     style={{ cursor: "pointer" }}
+                        />
+                    )}
                     </div>
-
-                    <div className="input-field">
-                        <input type="password" name="confirmPassword" placeholder="Confirmar Senha" required onChange={handleChange} />
-                        <FaLock className="icon" />
-                    </div>
-
+                   
+                   <div className="input-field">
+                    <input 
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword" 
+                    placeholder="Confirmar Senha" 
+                    required 
+                    onChange={handleChange} 
+                    />
+                    {showConfirmPassword ? (
+                     <FaLockOpen 
+                    className="icon" 
+                    onClick={() => setShowConfirmPassword(false)} 
+                    style={{ cursor: "pointer" }}
+                    />
+                    ) : (
+                    <FaLock 
+                    className="icon" 
+                    onClick={() => setShowConfirmPassword(true)} 
+                    style={{ cursor: "pointer" }}
+                    />
+                        )}
+                   </div>
+                    
                     <button type="submit">Cadastrar</button>
 
                     <div className="signup-link">

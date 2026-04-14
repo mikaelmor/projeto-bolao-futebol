@@ -1,4 +1,4 @@
-import {FaUser, FaLock} from "react-icons/fa"
+import {FaUser, FaLock, FaLockOpen} from "react-icons/fa"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import './Login.css'
@@ -7,6 +7,7 @@ import './Login.css'
 const Login = ()=> {
 
     const[username,setUsername] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [password,setPassword] = useState("");
     const navigate = useNavigate();
 
@@ -48,10 +49,21 @@ const Login = ()=> {
             </div>
              <div className="input-field">
             <input 
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Senha" 
             onChange={(e) => setPassword (e.target.value)}/>
-             <FaLock className="icon"/>
+             {showPassword ? (
+                <FaLockOpen 
+                className="icon" 
+                onClick={() => setShowPassword(false)}
+                style={{cursor: "pointer"}}
+                />
+             ) : (
+                <FaLock
+                className="icon"
+                onClick={() => setShowPassword(true)}
+                style={{cursor: "pointer"}}/>
+             )}
              </div>
 
             <div className="recall-forget">

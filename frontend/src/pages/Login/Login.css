@@ -50,7 +50,7 @@
     border-radius: 40px;
     font-size: 16px;
     color: white;
-    padding: 20px 25px;
+    padding: 20px 45px 20px 25px;
 }
 
 .input-field input::placeholder {
@@ -59,6 +59,8 @@
 
 .input-field .icon {
     position: absolute;
+    pointer-events: auto;
+    z-index: 10;
     right: 25px;
     top: 50%;
     transform: translateY(-50%);

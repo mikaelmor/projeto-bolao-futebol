@@ -17,13 +17,14 @@ class CadastroService:
     def __init__(self, repositorio: RepositorioUsuario):
         self._repo = repositorio
 
-    def cadastrar(self, nome: str, email: str, cpf: str, senha: str) -> dict:
+    def cadastrar(self, nome: str, sobrenome: str, email: str, cpf: str, senha: str) -> dict:
         nome, email, cpf = self._sanitizar(nome, email, cpf)   
         self._validar_campos(nome, email, cpf, senha)
         self._verificar_duplicidade(email, cpf)
 
         usuario = Usuario(
             nome=nome,
+            sobrenome=sobrenome,
             email=email, 
             cpf=cpf,
             senha_hash=hash_senha(senha),
