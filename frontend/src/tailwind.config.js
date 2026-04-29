@@ -4,7 +4,11 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        poppins : ["Arial", "sans-serif", "mono", "Monaco", "Monospace"]
+      }
+    },
   },
   plugins: [],
 };

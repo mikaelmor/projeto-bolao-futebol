@@ -1,7 +1,7 @@
 import hashlib
 import os
 import re
-import secret
+import secrets
 import string
 MINIMO_CARACTERES = 6
 def gerar_senha_temporaria(tamanho: int = 10)-> str:
@@ -9,7 +9,7 @@ def gerar_senha_temporaria(tamanho: int = 10)-> str:
         raise ValueError(f"Tamanho minimo da senha é{MINIMO_CARACTERES}  caracteres.")
     
     simbolos = "!@#$%&*"
-    alfabeto = string.ascii_letters + strings.digits +simbolos
+    alfabeto = string.ascii_letters + string.digits +simbolos
 
     while True: 
         senha = "". join(secrets.choice(alfabeto) for _ in range(tamanho))

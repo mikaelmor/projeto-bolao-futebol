@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from .usuario import Usuario
+from usuario import Usuario
 
 class RepositorioUsuario(ABC):
     @abstractmethod

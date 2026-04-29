@@ -1,13 +1,16 @@
 import { createBrowserRouter } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login/Login";
-import AnimatedLayout from "./layout/Animated-Layout";
+import AnimatedLoader from "./layout/Animated-Loader.jsx";
 import Registro from "./pages/Registro/Register";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Suporte from "./pages/FalemConosco";
 import EsqueceuSenha from "./pages/Esqueceu-Senha";
 import Ranking from "./pages/Ranking/Ranking";
 import Curiosidades from "./pages/Curiosidades/WorldCup-History";
+import Profile from "./pages/Perfil_do_Usuario/Profile";
+import Configurações from "./pages/Configurações";
+import Sidebar from "./components/Sidebar.jsx";
 
 
 
@@ -17,7 +20,7 @@ import Curiosidades from "./pages/Curiosidades/WorldCup-History";
 
 const routes = createBrowserRouter([
  {
-  element: < AnimatedLayout/>,
+  element: < AnimatedLoader/>,
   children: [
  { path: "/", element: <Home /> },
  { path: "/login", element: <Login /> },
@@ -27,6 +30,8 @@ const routes = createBrowserRouter([
  { path: "/esqueceu-senha", element: < EsqueceuSenha />},
  { path: "/curiosidades", element: < Curiosidades />},
  { path: "/ranking", element: < Ranking />},
+ { path: "/perfil", element: < Profile />},
+ { path: "/configurações", element: < Configurações/>},
   ],
  }
 ]);

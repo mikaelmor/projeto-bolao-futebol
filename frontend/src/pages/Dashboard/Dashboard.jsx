@@ -7,6 +7,9 @@ import { Form, useNavigate } from "react-router-dom";
 import { Link } from 'react-router-dom';
 import { BsArrowLeftShort} from "react-icons/bs";
 import logo from "../../imagens/GoalPoint LOGO.png"
+import Sidebar from '../../components/Sidebar';
+import Navbar from '../../components/Navbar';
+import JogoCard from '../../ui/JogoCard';
 
 
 import 'swiper/css';
@@ -15,17 +18,21 @@ import 'swiper/css/navigation';
 
 import slide_imagem1 from "../../imagens/Messi.webp";
 import slide_imagem2 from "../../imagens/Mbappe.webp";
-import slide_imagem3 from "../../imagens/babap.webp";
+import slide_imagem3 from "../../imagens/Thomas.webp";
 
 
 function Dashboard() {
 
     const navigate = useNavigate();
 
+    const [openMenu, setOpenMenu] = useState(false);
+
     return(
                
+        
+        
         <div className="main">
-            <div className="w-full flex items-center justify-between px-8 py-4 bg-black/40 backdrop-blur-md">
+            <div className="w-full flex items-center justify-between px-8 py-4">
 
                 <div className="flex items-center gap-1">
                     <img src={logo} alt="logo" className="w-10 h-10 object-contain" />
@@ -34,16 +41,22 @@ function Dashboard() {
                     </h1>
                 </div>
 
-               <div className="flex items-center gap-[12px] font-style: italic text-white font-mono text-lg ">
+                
+
+               <div className="flex items-center gap-4 text-white font-mono text-lg ">
+                
+                   <Navbar/>
+
                     <Link to="/ranking" 
                     className="hover:text-lime-400 transition">Ranking
                     </Link>
-                 
                     <Link to="/curiosidades"className="hover:text-lime-400 transition">
                     Curiosidades
-                    </Link>
-</div>
+                    </Link>     
 
+                    <Sidebar/>
+  
+    </div>
             </div>
 
             <button className="brasil-button"
@@ -55,8 +68,10 @@ function Dashboard() {
                </div>
             </button>
 
+            
 
         <div className='container'>
+            
             <Swiper
             spaceBetween={30}
             centeredSlides= {true}
@@ -89,13 +104,18 @@ function Dashboard() {
                     <div className="swiper-pagination"></div>
                 </div>
 
-            </Swiper>
+            </Swiper>         
+        
+           <div>
+                <JogoCard />
+            </div>
+
+        </div>
+            
+
         </div>
 
-
-        </div>
-
-
+            
             
         
     )
