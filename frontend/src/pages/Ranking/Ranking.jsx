@@ -4,8 +4,8 @@ import "../../styles/ranking.css";
 
 
 const MOCK_USERS = [
-  { id: 1, username: "Rodrigo",  points: 340 },
-  { id: 2, username: "Camila",   points: 290 },
+  { id: 1, username: "Mikael",  points: 340 },
+  { id: 2, username: "Luisa",   points: 290 },
   { id: 3, username: "Lucas",    points: 255 },
   { id: 4, username: "Fernanda", points: 210 },
   { id: 5, username: "Pedro",    points: 180 },
