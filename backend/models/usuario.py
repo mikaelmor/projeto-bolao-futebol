@@ -43,7 +43,7 @@ class Usuario:
     
     def _mascarar_cpf(self) -> str:
         cpf = re.sub(r"\D", "", self.cpf)
-        return f"***.{cpf[3:6]}.{cpf[6.9]}-**"
+        return f"***.{cpf[3:6]}.{cpf[6:9]}-**"
     
 
 class ErroCadastro(Exception):

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './Suporte.css';
 import { useNavigate } from 'react-router-dom';
+import { sendSupportQuestion } from '../../services/api';
 
 
 const Suporte = () => {
@@ -22,18 +23,18 @@ const Suporte = () => {
   };
 
   const enviarDuvida = async () => {
+    if (!mensagemUsuario.trim()) {
+      alert("Digite sua duvida antes de enviar.");
+      return;
+    }
+
     try {
-      const response = await fetch('http://localhost:8000/enviar-duvida', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mensagem: mensagemUsuario })
-      });
-      if (response.ok) {
-        alert("Mensagem enviada com sucesso!");
-        setMensagemUsuario("");
-      }
+      await sendSupportQuestion(mensagemUsuario);
+      alert("Mensagem enviada com sucesso!");
+      setMensagemUsuario("");
     } catch (error) {
       console.error("Erro ao enviar:", error);
+      alert(error.message);
     }
   };
 

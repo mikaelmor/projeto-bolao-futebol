@@ -1,3 +1,4 @@
+import { fetchGames } from "../services/api";
 import React from "react";
 import Brasil from "../imagens/escudo_brasil.png";
 import Argentina from "../imagens/escudo_argentina.png";

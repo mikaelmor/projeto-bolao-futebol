@@ -12,6 +12,7 @@ from routes.cadastro import cadastro_bp
 from models.repositorio_jogo import RepositorioJogoEmMemoria
 from services.jogo_service import JogoService
 from routes.jogos import jogos_bp
+from routes.suporte import suporte_bp
 
 
 app = Flask(__name__)
@@ -33,6 +34,8 @@ app.register_blueprint(cadastro_bp)
 
 app.config["JOGO_SERVICE"] = JogoService(RepositorioJogoEmMemoria())
 app.register_blueprint(jogos_bp)
+
+app.register_blueprint(suporte_bp)
 
 
 def is_valid_email(email: str) -> bool:
