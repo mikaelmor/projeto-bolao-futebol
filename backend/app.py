@@ -1,3 +1,5 @@
+#ponto de entrada da aplicação flask
+
 from flask import Flask, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
@@ -8,16 +10,25 @@ from datetime import datetime, timedelta
 from models.repositorio import RepositorioEmMemoria
 from services.cadastro_service import CadastroService
 from routes.cadastro import cadastro_bp
+
 #Módulo de jogos 
 from models.repositorio_jogo import RepositorioJogoEmMemoria
 from services.jogo_service import JogoService
 from routes.jogos import jogos_bp
 
+#Módulo palpites
+from models.repositorio_palpite import RepositorioPalpiteEmMemoria
+from services.palpite_service import PalpiteService
+from routes.palpites import palpites_bp
+
+#módulo ranking
+from services.ranking_service import RankingService
+from routes.ranking import ranking_bp
+
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
 
-#Armazenamento em memória (substituir pelo BD) 
 users = {
     "usuario@exemplo.com": {
         "password_hash": generate_password_hash("senha123"),
@@ -27,12 +38,27 @@ users = {
 
 reset_tokens = {}
 
+from models.repositorio_mysql import criar_conexao, RepositorioUsuarioMySQL
+from models.repositorio_mysql import RepositorioJogoMySQL, RepositorioPalpiteMySQL
+
+_conn          = criar_conexao()
+_repo_usuario  = RepositorioUsuarioMySQL(_conn)
+_repo_jogo     = RepositorioJogoMySQL(_conn)
+_repo_palpite  = RepositorioPalpiteMySQL(_conn)
+
 #Registro dos módulos
 app.config["CADASTRO_SERVICE"] = CadastroService(RepositorioEmMemoria())
 app.register_blueprint(cadastro_bp)
 
 app.config["JOGO_SERVICE"] = JogoService(RepositorioJogoEmMemoria())
 app.register_blueprint(jogos_bp)
+
+app.config["PALPITE_SERVICE"] = PalpiteService(_repo_palpite, _repo_jogo)
+app.register_blueprint(palpites_bp)
+ 
+app.config["RANKING_SERVICE"] = RankingService(_repo_palpite, _repo_usuario)
+app.register_blueprint(ranking_bp)
+ 
 
 
 def is_valid_email(email: str) -> bool:
@@ -49,10 +75,7 @@ def index():
 
 @app.route("/login", methods=["POST"])
 def login():
-    """
-    POST /login
-    Body JSON: {"email": "...", "password": "..."}
-    """
+    
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"success": False, "error": "Corpo da requisição deve ser JSON."}), 400
@@ -115,10 +138,7 @@ def forgot_password():
 
 @app.route("/reset-password", methods=["POST"])
 def reset_password():
-    """
-    POST /reset-password
-    Body JSON: {"token": "...", "new_password": "..."}
-    """
+
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"success": False, "error": "Corpo da requisição inválido."}), 400

@@ -45,7 +45,8 @@ class Usuario:
         cpf = re.sub(r"\D", "", self.cpf)
         return f"***.{cpf[3:6]}.{cpf[6.9]}-**"
     
-
+    
+#erros de validação
 class ErroCadastro(Exception):
     def __init__(self, mensagem: str, campo: str | None = None):
         super(). __init__(mensagem)

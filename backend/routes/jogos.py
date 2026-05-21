@@ -1,5 +1,4 @@
-# routes/jogos.py   blueprint Flask com os endpoints do módulo de partidas da Copa do mundo
-
+# routes/jogos.py   
 from datetime import date
 
 from flask import Blueprint, jsonify, request
@@ -31,8 +30,7 @@ def jogos_hoje():
 @jogos_bp.get("/")
 def listar_jogos():
     """
-    Lista partidas. Parâmetro opcional ?data=YYYY-MM-DD filtra por data.
-    Sem parâmetro, retorna todas as partidas cadastradas.
+    Lista partidas. Parâmetro opcional ?data=YYYY-MM-DD filtra por data.Sem parâmetro, retorna todas as partidas cadastradas.
     """
     data_param = request.args.get("data")
     service = _get_service()
@@ -50,10 +48,10 @@ def listar_jogos():
 
 
 #GET /api/jogos/<id>
-@jogos_bp.get("/<int:id>")
-def buscar_jogo(id: int):
+@jogos_bp.get("/<int:id_jogo>")
+def buscar_jogo(id_jogo: int):
     try:
-        return jsonify(_get_service().buscar_jogo(id)), 200
+        return jsonify(_get_service().buscar_jogo(id_jogo)), 200
     except ErroJogo as e:
         return jsonify(e.to_dict()), 404
 
@@ -63,30 +61,34 @@ def buscar_jogo(id: int):
 def criar_jogo():
     """
     Cadastrar uma nova partida da Copa manualmente
-
     Body JSON:
-        selecao_a : str  — ex: "Brasil"
-        selecao_b : str  — ex: "Argentina"
-        horario   : str  — ISO 8601, ex: "2026-06-10T20:00:00"
-        fase      : str  — ex: "Fase de Grupos", "Semifinal", "Final"
-        estadio   : str  — ex: "MetLife Stadium, EUA"
-        grupo     : str  — opcional, ex: "Grupo C"
+        fase - 'quartas', 'semifinal', 'final'
+        data jogo - yyyy-mm-dd
+        horario hh:mm
+        time_a - str
+        time_b - str
+        pontos_times_a - int
+        pontos empate - int
+        pontos_time b - int
     """
     dados = request.get_json(silent=True) or {}
 
-    obrigatorios = ["selecao_a", "selecao_b", "horario", "fase", "estadio"]
+    obrigatorios = ["fase", "data_jogo", "horario", "time_a", "time_b", "pontos_time_a", "pontos_empate", "pontos_time_b"]
     ausentes = [c for c in obrigatorios if not dados.get(c)]
     if ausentes:
         return jsonify({"erro": "Campos obrigatórios ausentes.", "campos": ausentes}), 422
 
     try:
         jogo = _get_service().criar_jogo(
-            selecao_a=dados["selecao_a"],
-            selecao_b=dados["selecao_b"],
-            horario=dados["horario"],
             fase=dados["fase"],
-            estadio=dados["estadio"],
-            grupo=dados.get("grupo"),
+            data_jogo=dados["data_jogo"],
+            horario=dados["horario"],
+            time_a=dados["time_a"],
+            time_b=dados["time_b"],
+            pontos_time_a=dados["pontos_time_a"],
+            pontos_empate=dados["pontos_empate"],
+            pontos_time_b=dados["pontos_time_b"],
+           
         )
         return jsonify({"mensagem": "Partida cadastrada com sucesso.", "jogo": jogo}), 201
     except ErroJogo as e:
@@ -94,56 +96,46 @@ def criar_jogo():
 
 
 #PATCH /api/jogos/<id>
-@jogos_bp.patch("/<int:id>")
-def atualizar_jogo(id: int):
+@jogos_bp.patch("/<int:id_jogo>")
+def atualizar_jogo(id_jogo: int):
     """
-    Atualiza campos de uma partida agendada (não funciona em partidas encerradas).
-    Envie apenas os campos que deseja alterar.
+    Atualiza campos de uma partida agendada (não funciona em partidas encerradas).Envie apenas os campos que deseja alterar.
     """
     dados = request.get_json(silent=True) or {}
     if not dados:
         return jsonify({"erro": "Nenhum dado enviado para atualização."}), 400
 
     try:
-        jogo = _get_service().atualizar_jogo(id, dados)
+        jogo = _get_service().atualizar_jogo(id_jogo, dados)
         return jsonify({"mensagem": "Partida atualizada.", "jogo": jogo}), 200
     except ErroJogo as e:
         return jsonify(e.to_dict()), 400
 
+@jogos_bp.post("/<int:id_jogo>/iniciar")
+def iniciar_jogo(id_jogo: int):
+    """Muda status para em_andamento — bloqueia novos palpites."""
+    try:
+        return jsonify(_get_service().iniciar_jogo(id_jogo)), 200
+    except ErroJogo as e:
+        return jsonify(e.to_dict()), 400
 
 #POST /api/jogos/<id>/resultado 
 @jogos_bp.post("/<int:id>/resultado")
-def registrar_resultado(id: int):
-    """
-    Registra o placar final e encerra a partida.
-    Quando o módulo de palpites estiver pronto, esse endpoint
-    também vai disparar o cálculo de pontuação dos usuários.
-
-    Body JSON:
-        placar_a : int  — gols da seleção A
-        placar_b : int  — gols da seleção B
-    """
+def registrar_resultado(id_jogo: int):
+    
     dados = request.get_json(silent=True) or {}
-
-    if "placar_a" not in dados or "placar_b" not in dados:
-        return jsonify({"erro": "Informe placar_a e placar_b."}), 422
-
+    if not dados.get("resultado"):
+        return jsonify({"erro": "Informe o campo resultado: time_a | empate | time_b"}), 422
     try:
-        jogo = _get_service().registrar_resultado(
-            id=id,
-            placar_a=int(dados["placar_a"]),
-            placar_b=int(dados["placar_b"]),
-        )
+        jogo = _get_service().registrar_resultado(id_jogo, dados["resultado"])
         return jsonify({"mensagem": "Resultado registrado.", "jogo": jogo}), 200
     except ErroJogo as e:
         return jsonify(e.to_dict()), 400
 
-
 #PATCH /api/jogos/<id>/cancelar
 @jogos_bp.patch("/<int:id>/cancelar")
-def cancelar_jogo(id: int):
+def cancelar_jogo(id_jogo: int):
     try:
-        jogo = _get_service().cancelar_jogo(id)
-        return jsonify({"mensagem": "Partida cancelada.", "jogo": jogo}), 200
+        return jsonify(_get_service().cancelar_jogo(id_jogo)), 200
     except ErroJogo as e:
         return jsonify(e.to_dict()), 400
