@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
+import os
 import secrets
 import re
 from datetime import datetime, timedelta
@@ -13,6 +14,8 @@ from models.repositorio_jogo import RepositorioJogoEmMemoria
 from services.jogo_service import JogoService
 from routes.jogos import jogos_bp
 from routes.suporte import suporte_bp
+from services.simulacao_service import SimulacaoService
+from routes.simulacao import simulacao_bp
 
 
 app = Flask(__name__)
@@ -32,10 +35,41 @@ reset_tokens = {}
 app.config["CADASTRO_SERVICE"] = CadastroService(RepositorioEmMemoria())
 app.register_blueprint(cadastro_bp)
 
+app.config["DEV_SIMULATION_KEY"] = os.environ.get("GOALPOINT_DEV_KEY", "goalpoint-dev")
 app.config["JOGO_SERVICE"] = JogoService(RepositorioJogoEmMemoria())
 app.register_blueprint(jogos_bp)
 
 app.register_blueprint(suporte_bp)
+app.config["SIMULACAO_SERVICE"] = SimulacaoService(app.config["JOGO_SERVICE"])
+app.register_blueprint(simulacao_bp)
+
+
+def carregar_jogos_iniciais():
+    service = app.config["JOGO_SERVICE"]
+    if service.listar_todos():
+        return
+
+    hoje = datetime.now()
+    jogos = [
+        ("Brasil", "Argentina", 14, 30, "Grupo A"),
+        ("Holanda", "Portugal", 15, 40, "Grupo B"),
+        ("Catar", "Espanha", 16, 5, "Grupo C"),
+        ("Ira", "EUA", 16, 35, "Grupo D"),
+    ]
+
+    for selecao_a, selecao_b, hora, minuto, grupo in jogos:
+        horario = hoje.replace(hour=hora, minute=minuto, second=0, microsecond=0)
+        service.criar_jogo(
+            selecao_a=selecao_a,
+            selecao_b=selecao_b,
+            horario=horario.isoformat(),
+            fase="Copa do Mundo",
+            estadio="Estadio GoalPoint",
+            grupo=grupo,
+        )
+
+
+carregar_jogos_iniciais()
 
 
 def is_valid_email(email: str) -> bool:

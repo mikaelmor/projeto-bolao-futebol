@@ -12,6 +12,7 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    padding: 90px 16px 32px;
     background-image: url('./src/imagens/login.registro.webp');
     background-size: cover;
     background-position: center;
@@ -20,7 +21,7 @@
 
 
 .login-container {
-    width: 450px;
+    width: min(450px, 100%);
     background-color: rgba( 255, 255, 255, 0.15);
     backdrop-filter: blur 10px;
     border: 2px sold rgba(255, 255, 255, 0.2);
@@ -182,4 +183,38 @@
     height: 30px;
     margin: 24px 18px 0 22px;
     fill: #f0eeef;
+}
+
+@media (max-width: 520px) {
+    .Login {
+        align-items: flex-start;
+        padding: 88px 14px 28px;
+    }
+
+    .login-container {
+        padding: 28px 20px;
+    }
+
+    .login-container h1 {
+        font-size: 24px;
+    }
+
+    .login-container .recall-forget {
+        flex-direction: column;
+        gap: 10px;
+        margin: -8px 0 18px;
+    }
+
+    .recall-forget label {
+        margin-right: 0;
+    }
+
+    .styled-wrapper .button {
+        width: 58px;
+        height: 58px;
+    }
+
+    .styled-wrapper .button-elem {
+        margin: 15px 14px 0 15px;
+    }
 }

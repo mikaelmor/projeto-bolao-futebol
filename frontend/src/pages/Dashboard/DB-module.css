@@ -1,13 +1,20 @@
 
 .main {
-   width: 100vw;
+   width: 100%;
     max-width: none;
     margin-top: 0;
     background-image: url("./src/imagens/campo de futebol.webp");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;   
-    min-height: 100vh;
+    height: 100vh;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.main::-webkit-scrollbar {
+  display: none;
 }
 .title {
     text-align: center;
@@ -39,8 +46,10 @@
 
 
 .container {
- padding: 0 20px;
+ padding: 0 20px 32px;
  margin: auto;
+ width: 100%;
+ max-width: 1180px;
 }
 
 
@@ -66,11 +75,26 @@
 .swiper-slide img {
   width: 100%;
   max-width: 650px;
-  height: 260px;          
+  height: clamp(180px, 36vw, 260px);          
   object-fit: cover;
   border: none;          
   transition: transform 0.3s, box-shadow 0.3s;
  
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 12px 24px;
+  }
+
+  .brasil-button {
+    padding: 8px 14px;
+    margin: 6px 12px;
+  }
+
+  .swiper_container {
+    max-width: 100%;
+  }
 }
 
 

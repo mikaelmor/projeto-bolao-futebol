@@ -15,9 +15,9 @@ const Profile = () => {
   }
 
    return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-green-900 to-black text-white flex px-10 py-8 gap-10">
+    <div className="min-h-screen bg-gradient-to-br from-black via-green-900 to-black text-white flex flex-col lg:flex-row px-4 sm:px-8 lg:px-10 py-6 lg:py-8 gap-6 lg:gap-10">
      
-      <div className="w-1/3 flex flex-col gap-8">
+      <div className="w-full lg:w-1/3 flex flex-col gap-6 lg:gap-8">
        <button
       onClick={() => navigate("/dashboard")}
       className="relative w-[56px] h-[56px] bg-transparent cursor-pointer overflow-hidden border-0 group"
@@ -65,10 +65,10 @@ const Profile = () => {
       </div>
 
       
-      <div className="w-2/3 flex flex-col gap-8">
+      <div className="w-full lg:w-2/3 flex flex-col gap-6 lg:gap-8">
 
        
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
           <div className="bg-white/10 p-6 rounded-xl text-center shadow-md">
             <h3 className="text-3xl font-bold">120</h3>
             <p className="mt-2">Pontos</p>

@@ -1,8 +1,18 @@
 import "./Navbar.css";
 
-const Navbar = () => {
+const Navbar = ({ onSearch }) => {
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    onSearch?.(formData.get("search") || "");
+  };
+
+  const handleReset = () => {
+    onSearch?.("");
+  };
+
   return (
-    <form className="form">
+    <form className="form" onSubmit={handleSubmit} onReset={handleReset}>
       <button type="submit">
         <svg width="17" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
@@ -17,8 +27,8 @@ const Navbar = () => {
 
       <input
         className="input"
+        name="search"
         placeholder="Buscar..."
-        required
         type="text"
       />
 

@@ -3,6 +3,24 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../../services/api";
 
+const formatCpf = (value) => {
+    const cpfNumbers = value.replace(/\D/g, "").slice(0, 11);
+
+    if (cpfNumbers.length <= 3) {
+        return cpfNumbers;
+    }
+
+    if (cpfNumbers.length <= 6) {
+        return `${cpfNumbers.slice(0, 3)}.${cpfNumbers.slice(3)}`;
+    }
+
+    if (cpfNumbers.length <= 9) {
+        return `${cpfNumbers.slice(0, 3)}.${cpfNumbers.slice(3, 6)}.${cpfNumbers.slice(6)}`;
+    }
+
+    return `${cpfNumbers.slice(0, 3)}.${cpfNumbers.slice(3, 6)}.${cpfNumbers.slice(6, 9)}-${cpfNumbers.slice(9)}`;
+};
+
 const Registro = () => {
     const [formData, setFormData] = useState({
         nome: "",
@@ -20,10 +38,11 @@ const Registro = () => {
 
     const handleChange = (event) => {
         const { name, value } = event.target;
+        const fieldValue = name === "cpf" ? formatCpf(value) : value;
 
         setFormData((prevData) => ({
             ...prevData,
-            [name]: value
+            [name]: fieldValue
         }));
     };
 
@@ -88,7 +107,16 @@ const Registro = () => {
                     </div>
 
                     <div className="input-field">
-                        <input type="text" name="cpf" placeholder="CPF" required onChange={handleChange} />
+                        <input
+                            type="text"
+                            name="cpf"
+                            placeholder="CPF"
+                            required
+                            value={formData.cpf}
+                            onChange={handleChange}
+                            inputMode="numeric"
+                            maxLength={14}
+                        />
                         <FaIdCard className="icon" />
                     </div>
 

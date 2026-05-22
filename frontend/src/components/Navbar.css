@@ -76,3 +76,14 @@ input:not(:placeholder-shown) ~ .reset {
   width: 17px;
   margin-top: 3px;
 }
+
+@media (max-width: 640px) {
+  .form {
+    --width-of-input: min(170px, 48vw);
+    --height-of-input: 36px;
+  }
+
+  .input {
+    font-size: 0.8rem;
+  }
+}

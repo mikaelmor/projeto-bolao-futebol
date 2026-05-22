@@ -1,5 +1,25 @@
 @import "tailwindcss";
 
-body {
+html {
+  width: 100%;
   overflow-x: hidden;
+}
+
+body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
 }

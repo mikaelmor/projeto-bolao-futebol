@@ -55,13 +55,13 @@ const Configurações = () => {
   };
 
   return (
-    <div className="min-h-screen text-white p-6 md:p-10 relative overflow-hidden bg-[#020617] flex justify-center pt-25">
+    <div className="min-h-screen text-white p-4 sm:p-6 md:p-10 relative overflow-y-auto overflow-x-hidden bg-[#020617] flex justify-center pt-8 md:pt-25">
 
   <div className="absolute top-0 left-0 w-full h-[300px] bg-blue-500 opacity-20 blur-[120px]" />
   <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-green-400 opacity-20 blur-[120px]" />
   <div className="absolute right-0 top-0 w-[400px] h-full bg-blue-400 opacity-10 blur-[150px]" />
 
-      <div className="relative z-10 max-w-4xl mx-auto space-y-6 translate-y-26">
+      <div className="relative z-10 w-full max-w-4xl mx-auto space-y-6 md:translate-y-10">
 
         <h1 className="text-2xl font-bold tracking-wide">
           Configurações
@@ -137,7 +137,7 @@ const Configurações = () => {
         </div>
 
                 
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
 
                 <ButtonConfig onClick={handleSave}>
                     Salvar

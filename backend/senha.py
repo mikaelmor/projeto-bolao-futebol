@@ -3,7 +3,7 @@ import os
 import re
 import secrets
 import string
-MINIMO_CARACTERES = 6
+MINIMO_CARACTERES = 5
 def gerar_senha_temporaria(tamanho: int = 10)-> str:
     if tamanho <MINIMO_CARACTERES:
         raise ValueError(f"Tamanho minimo da senha é{MINIMO_CARACTERES}  caracteres.")

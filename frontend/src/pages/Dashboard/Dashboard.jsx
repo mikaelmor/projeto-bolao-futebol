@@ -26,13 +26,14 @@ function Dashboard() {
     const navigate = useNavigate();
 
     const [openMenu, setOpenMenu] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
 
     return(
                
         
         
         <div className="main">
-            <div className="w-full flex items-center justify-between px-8 py-4">
+            <div className="w-full flex flex-wrap items-center justify-between gap-3 px-4 sm:px-8 py-4">
 
                 <div className="flex items-center gap-1">
                     <img src={logo} alt="logo" className="w-10 h-10 object-contain" />
@@ -43,9 +44,9 @@ function Dashboard() {
 
                 
 
-               <div className="flex items-center gap-4 text-white font-mono text-lg ">
+               <div className="flex flex-wrap items-center justify-end gap-3 sm:gap-4 text-white font-mono text-sm sm:text-lg ">
                 
-                   <Navbar/>
+                   <Navbar onSearch={setSearchTerm}/>
 
                     <Link to="/ranking" 
                     className="hover:text-lime-400 transition">Ranking
@@ -107,7 +108,7 @@ function Dashboard() {
             </Swiper>         
         
            <div>
-                <JogoCard />
+                <JogoCard searchTerm={searchTerm} />
             </div>
 
         </div>

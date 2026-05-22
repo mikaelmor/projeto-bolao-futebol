@@ -67,7 +67,7 @@ def criar_jogo():
     Body JSON:
         selecao_a : str  — ex: "Brasil"
         selecao_b : str  — ex: "Argentina"
-        horario   : str  — ISO 8601, ex: "2026-06-10T20:00:00"
+        horario   : str  — ISO 8601, ex: "2026-05-26T20:00:00"
         fase      : str  — ex: "Fase de Grupos", "Semifinal", "Final"
         estadio   : str  — ex: "MetLife Stadium, EUA"
         grupo     : str  — opcional, ex: "Grupo C"

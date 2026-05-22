@@ -69,6 +69,29 @@ class JogoService:
     def listar_todos(self) -> list[dict]:
         return [j.to_dict() for j in self._repo.listar_todos()]
 
+    def iniciar_jogo(self, id: int) -> dict:
+        jogo = self._repo.buscar_por_id(id)
+        if not jogo:
+            raise JogoNaoEncontrado()
+        if jogo.status == StatusJogo.ENCERRADO:
+            raise JogoJaEncerrado()
+
+        jogo.status = StatusJogo.EM_ANDAMENTO
+        jogo.placar_a = 0
+        jogo.placar_b = 0
+        return self._repo.atualizar(jogo).to_dict()
+
+    def atualizar_placar_parcial(self, id: int, placar_a: int, placar_b: int) -> dict:
+        jogo = self._repo.buscar_por_id(id)
+        if not jogo:
+            raise JogoNaoEncontrado()
+        if jogo.status == StatusJogo.ENCERRADO:
+            raise JogoJaEncerrado()
+
+        jogo.placar_a = placar_a
+        jogo.placar_b = placar_b
+        return self._repo.atualizar(jogo).to_dict()
+
     #Atualizaçao
 
     def atualizar_jogo(self, id: int, dados: dict) -> dict:

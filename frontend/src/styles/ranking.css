@@ -258,3 +258,43 @@
   border-color: rgba(220, 20, 20, 0.35);
   background: rgba(220, 20, 20, 0.07);
 }
+
+@media (max-width: 680px) {
+  .ranking-page {
+    padding: 1rem 0.75rem 3rem;
+    overflow-x: hidden;
+  }
+
+  .podium-row {
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .card {
+    width: min(30vw, 150px);
+    height: 200px;
+  }
+
+  .card.first {
+    width: min(33vw, 165px);
+    height: 220px;
+  }
+
+  .bg {
+    padding: 8px;
+  }
+
+  .card-name {
+    max-width: 90px;
+    font-size: 0.75rem;
+  }
+
+  .card-points {
+    font-size: 0.68rem;
+  }
+
+  .rank-row {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+}

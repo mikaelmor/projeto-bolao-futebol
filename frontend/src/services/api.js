@@ -72,3 +72,21 @@ export const sendSupportQuestion = (mensagem) => {
     body: JSON.stringify({ mensagem }),
   });
 };
+
+export const fetchSimulatedGames = () => {
+  return requestJson("/api/simulacao/jogos");
+};
+
+export const submitGamePrediction = ({ jogoId, usuarioId, escolha }) => {
+  return requestJson(`/api/simulacao/jogos/${jogoId}/palpite`, {
+    method: "POST",
+    body: JSON.stringify({ usuario_id: usuarioId, escolha }),
+  });
+};
+
+export const removeGamePrediction = ({ jogoId, usuarioId }) => {
+  return requestJson(`/api/simulacao/jogos/${jogoId}/palpite`, {
+    method: "DELETE",
+    body: JSON.stringify({ usuario_id: usuarioId }),
+  });
+};
