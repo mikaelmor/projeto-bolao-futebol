@@ -1,6 +1,7 @@
 import {FaUser, FaLock, FaLockOpen} from "react-icons/fa"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { login } from "../../services/api"
 import './Login.css'
 
 
@@ -11,11 +12,24 @@ const Login = ()=> {
     const [password,setPassword] = useState("");
     const navigate = useNavigate();
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
+    const handleSubmit = async (event) => {
+  event.preventDefault();
 
-      alert("Enviando os dados:" + username + " - " + password);
-    }   
+  try {
+    const data = await login({
+      email: username,
+      password,
+    });
+
+    localStorage.setItem("session_token", data.session_token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+
+    navigate("/dashboard");
+  } catch (error) {
+    alert(error.message);
+  }
+};
+
 
     return(
         <div className="Login">
@@ -74,7 +88,7 @@ const Login = ()=> {
                 <a href="/esqueceu-senha" onClick={(e) => { e.preventDefault(); navigate("/esqueceu-senha"); }}>Esqueceu a senha ?</a>
             </div>
 
-           <button href="/dashboard" onClick={(e) => { e.preventDefault(); navigate("/dashboard"); }} >Entrar</button>
+           <button type="submit">Entrar</button>
 
             <div className="signup-link">
                 <p>Não tem uma conta ? <a href="/registro" onClick={(e) => { e.preventDefault(); navigate("/registro")  ;}}>Registrar</a></p>

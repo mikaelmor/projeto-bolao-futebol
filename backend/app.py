@@ -15,6 +15,7 @@ from routes.cadastro import cadastro_bp
 from models.repositorio_jogo import RepositorioJogoEmMemoria
 from services.jogo_service import JogoService
 from routes.jogos import jogos_bp
+from routes.suporte import suporte_bp
 
 #Módulo palpites
 from models.repositorio_palpite import RepositorioPalpiteEmMemoria
@@ -59,6 +60,7 @@ app.register_blueprint(palpites_bp)
 app.config["RANKING_SERVICE"] = RankingService(_repo_palpite, _repo_usuario)
 app.register_blueprint(ranking_bp)
  
+app.register_blueprint(suporte_bp)
 
 
 def is_valid_email(email: str) -> bool:

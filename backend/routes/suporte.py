@@ -1,23 +1,21 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
+from flask import Blueprint, jsonify, request
 
-app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+suporte_bp = Blueprint("suporte", __name__, url_prefix="/api/suporte")
 
-class Duvida(BaseModel):
-    mensagem: str
+CONTACT_EMAIL = "suporte.digitalfootball@gmail.com"
 
-    CONTACT_EMAIL = "suporte.digitalfootball@gmail.com"
 
-    @app.post("/enviar-duvida")
-    async def enviar_duvida(duvida: Duvida):
-        if not duvida.mensagem:
-            raise HTTPException(status_code=400, detail="A mensagem não pode estar vazia. ")
-        
+@suporte_bp.post("/enviar-duvida")
+def enviar_duvida():
+    dados = request.get_json(silent=True) or {}
+    mensagem = (dados.get("mensagem") or "").strip()
+
+    if not mensagem:
+        return jsonify({"erro": "A mensagem nao pode estar vazia."}), 400
+
+    return jsonify({
+        "mensagem": "Duvida enviada com sucesso.",
+        "destino": CONTACT_EMAIL,
+        "duvida": mensagem,
+    }), 200

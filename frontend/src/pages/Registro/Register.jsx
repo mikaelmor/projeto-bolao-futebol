@@ -1,7 +1,7 @@
 import { FaUser, FaLock, FaLockOpen, FaEnvelope, FaIdCard } from "react-icons/fa";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { registerUser } from "../../services/api";
 
 const Registro = () => {
     const [formData, setFormData] = useState({
@@ -18,50 +18,36 @@ const Registro = () => {
 
     const navigate = useNavigate();
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+    const handleChange = (event) => {
+        const { name, value } = event.target;
+
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: value
+        }));
     };
 
     const handleSubmit = async (event) => {
-    event.preventDefault();
+        event.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
-        alert("As senhas não coincidem!");
-        return;
-    }
-
-    try {
-        const response = await fetch("http://localhost:5173/api/cadastro/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                nome: formData.nome,
-                sobrenome: formData.sobrenome,
-                email: formData.email,
-                cpf: formData.cpf,
-                senha: formData.password,
-                confirmar_senha: formData.confirmPassword
-            })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            alert(data.erro || "Erro ao cadastrar");
+        if (formData.password !== formData.confirmPassword) {
+            alert("As senhas nao conferem.");
             return;
         }
 
-        alert("Cadastro realizado com sucesso");
-        navigate("/login");
+        try {
+            await registerUser({
+                nome: `${formData.nome} ${formData.sobrenome}`,
+                email: formData.email,
+                cpf: formData.cpf,
+                senha: formData.password,
+            });
 
-    } catch (error) {
-        console.error(error);
-        alert("Erro ao conectar com o servidor");
-    }
-};
+            navigate("/login");
+        } catch (error) {
+            alert(error.message);
+        }
+    };
 
     return (
         <div className="Login">

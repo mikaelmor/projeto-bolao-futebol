@@ -52,7 +52,7 @@ class CadastroService:
     def _sanitizar(nome: str, email: str, cpf: str) -> tuple[str, str, str]:
         nome = nome.strip()
         email = email.strip().lower()
-        cpf = re.sub(r"\D", "", cpf.strip)
+        cpf = re.sub(r"\D", "", cpf.strip())
         return nome, email, cpf
     
     def _validar_campos(self, nome: str, email: str, cpf:str, senha: str | None):

@@ -9,7 +9,7 @@ from models.usuario import(
 )
 
 from models.repositorio import RepositorioUsuario
-from utils.senha import gerar_senha_temporaria, hash_senha, validar_forca_senha
+from senha import gerar_senha_temporaria, hash_senha, validar_forca_senha
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -51,7 +51,7 @@ class CadastroService:
     def _sanitizar(nome: str, email: str, cpf: str) -> tuple[str, str, str]:
         nome = nome.strip()
         email = email.strip().lower()
-        cpf = re.sub(r"\D", "", cpf.strip)
+        cpf = re.sub(r"\D", "", cpf.strip())
         return nome, email, cpf
     
     def _validar_campos(self, nome: str, email: str, cpf:str, senha: str | None):
