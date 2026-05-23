@@ -1,19 +1,24 @@
 """
 services/jogo_service.py
-Serviço de partidas da Copa, lógica de negócio para criação, consulta e atualização
+Serviço de partidas da Copa, alinhado ao mysql
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 from models.jogo import (
     DadosJogoInvalidos,
+    FaseJogo,
     Jogo,
-    JogoJaEncerrado,
+    JogoBloqueado,
+    JogoJaFinalizado,
     JogoNaoEncontrado,
+    ResultadoFinal,
     StatusJogo,
 )
 from models.repositorio_jogo import RepositorioJogo
 
+FASES_VALIDAS = {f.value for f in FaseJogo}
+RESULTADOS_VALIDOS = {r.value for r in ResultadoFinal}
 
 class JogoService:
     def __init__(self, repositorio: RepositorioJogo):
@@ -23,33 +28,31 @@ class JogoService:
 
     def criar_jogo(
         self,
-        selecao_a: str,
-        selecao_b: str,
-        horario: str,
         fase: str,
-        estadio: str,
-        grupo: str | None = None,
+        data_jogo: str,
+        horario: str,
+        time_a: str,
+        time_b: str,
+        pontos_time_a: int,
+        pontos_empate: int,
+        pontos_time_b: int,
     ) -> dict:
         """
-        Cadastra uma nova partida da Copa manualmente.
-
-        horario : string ISO 8601 ex: "2026-06-10T20:00:00"
-        fase: ex "Fase de Grupos"
-        estadio
-        grupo 
+        Cadastra uma nova partida da Copa manualmente. Fases ('quartas', 'semifinal') // data_jogo ('YYYY-MM-dd) // horário ('HH:MM")
+ 
         """
-        selecao_a, selecao_b, fase, estadio = self._sanitizar(
-            selecao_a, selecao_b, fase, estadio
-        )
-        self._validar_criacao(selecao_a, selecao_b, horario, fase, estadio)
+        time_a, time_b = time_a.strip(), time_b.strip()
+        self._validar_criacao(fase, data_jogo, horario, time_a, time_b, pontos_time_a, pontos_empate, pontos_time_b)
 
         jogo = Jogo(
-            selecao_a=selecao_a,
-            selecao_b=selecao_b,
-            horario=datetime.fromisoformat(horario),
-            fase=fase,
-            estadio=estadio,
-            grupo=grupo.strip() if grupo else None,
+            fase=FaseJogo(fase),
+            data_jogo=date.fromisoformat(data_jogo),
+            horario=self._parse_horario(horario),
+            time_a=time_a,
+            time_b=time_b,
+            pontos_time_a=int(pontos_time_a),
+            pontos_empate=int(pontos_empate),
+            pontos_time_b=int(pontos_time_b),
         )
         return self._repo.salvar(jogo).to_dict()
 
@@ -60,8 +63,8 @@ class JogoService:
         data = data or date.today()
         return [j.to_dict() for j in self._repo.listar_por_data(data)]
 
-    def buscar_jogo(self, id: int) -> dict:
-        jogo = self._repo.buscar_por_id(id)
+    def buscar_jogo(self, id_jogo: int) -> dict:
+        jogo = self._repo.buscar_por_id(id_jogo)
         if not jogo:
             raise JogoNaoEncontrado()
         return jogo.to_dict()
@@ -69,111 +72,110 @@ class JogoService:
     def listar_todos(self) -> list[dict]:
         return [j.to_dict() for j in self._repo.listar_todos()]
 
-    def iniciar_jogo(self, id: int) -> dict:
-        jogo = self._repo.buscar_por_id(id)
-        if not jogo:
-            raise JogoNaoEncontrado()
-        if jogo.status == StatusJogo.ENCERRADO:
-            raise JogoJaEncerrado()
 
-        jogo.status = StatusJogo.EM_ANDAMENTO
-        jogo.placar_a = 0
-        jogo.placar_b = 0
-        return self._repo.atualizar(jogo).to_dict()
-
-    def atualizar_placar_parcial(self, id: int, placar_a: int, placar_b: int) -> dict:
-        jogo = self._repo.buscar_por_id(id)
-        if not jogo:
-            raise JogoNaoEncontrado()
-        if jogo.status == StatusJogo.ENCERRADO:
-            raise JogoJaEncerrado()
-
-        jogo.placar_a = placar_a
-        jogo.placar_b = placar_b
-        return self._repo.atualizar(jogo).to_dict()
-
-    #Atualizaçao
-
-    def atualizar_jogo(self, id: int, dados: dict) -> dict:
+    #Atualização
+    def atualizar_jogo(self, id_jogo: int, dados: dict) -> dict:
         """
         Atualiza campos permitidos de uma partida agendada
-        Campos editáveis: selecao_a, selecao_b, horario, fase, estadio, grupo
         """
-        jogo = self._repo.buscar_por_id(id)
+        jogo = self._repo.buscar_por_id(id_jogo)
         if not jogo:
             raise JogoNaoEncontrado()
-        if jogo.status == StatusJogo.ENCERRADO:
-            raise JogoJaEncerrado()
+        if jogo.status == StatusJogo.EM_ANDAMENTO:
+            raise JogoBloqueado()
+        if jogo.status == StatusJogo.FINALIZADO:
+            raise JogoJaFinalizado()
 
-        if "selecao_a" in dados:
-            jogo.selecao_a = dados["selecao_a"].strip()
-        if "selecao_b" in dados:
-            jogo.selecao_b = dados["selecao_b"].strip()
+        if "time_a" in dados:
+            jogo.time_a = dados["time_a"].strip()
+        if "time_b" in dados:
+            jogo.time_b = dados["time_b"].strip()
         if "fase" in dados:
-            jogo.fase = dados["fase"].strip()
-        if "estadio" in dados:
-            jogo.estadio = dados["estadio"].strip()
-        if "grupo" in dados:
-            jogo.grupo = dados["grupo"].strip() if dados["grupo"] else None
-        if "horario" in dados:
+            if dados["fase"] not in FASES_VALIDAS:
+                raise DadosJogoInvalidos(f"Fase inválida. Use: {','.join(FASES_VALIDAS)}", campo="fase")
+            jogo.fase = FaseJogo(dados["fase"])
+        if "data_jogo" in dados:
             try:
-                jogo.horario = datetime.fromisoformat(dados["horario"])
+                jogo.data_jogo = date.fromisoformat(dados["data_jogo"])
             except ValueError:
-                raise DadosJogoInvalidos("Formato de horário inválido. Use ISO 8601.", campo="horario")
+                raise DadosJogoInvalidos("Formato de data inválido. Use YYYY-MM-DD", campo="data_jogo")
+        if "horario" in dados:
+            jogo.horario = self._parse_horario(dados["horario"])
+        if "pontos_time_a" in dados:
+            jogo.pontos_time_a = int(dados["pontos_time_a"])
+        if "pontos_empate" in dados:
+            jogo.pontos_empate = int(dados["pontos_empate"])
+        if "pontos_time_b" in dados:
+            jogo.pontos_time_b = int(dados["pontos_time_b"])
 
         return self._repo.atualizar(jogo).to_dict()
 
-    def registrar_resultado(self, id: int, placar_a: int, placar_b: int) -> dict:
-        """
-        Registra o placar final e encerra a partida
-        Será usado pelo módulo de palpites para calcular pontuações
-        """
-        jogo = self._repo.buscar_por_id(id)
+    def iniciar_jogo(self, id_jogo: int) -> dict:
+        # muda status para em andamento e bloqueia palpites
+        jogo = self._repo.buscar_por_id(id_jogo)
         if not jogo:
             raise JogoNaoEncontrado()
-        if jogo.status == StatusJogo.ENCERRADO:
-            raise JogoJaEncerrado()
-
-        if placar_a < 0 or placar_b < 0:
-            raise DadosJogoInvalidos("Placar não pode ser negativo.", campo="placar")
-
-        jogo.placar_a = placar_a
-        jogo.placar_b = placar_b
-        jogo.status = StatusJogo.ENCERRADO
-
+        if jogo.status == StatusJogo.FINALIZADO:
+            raise JogoJaFinalizado()
+        if jogo.status == StatusJogo.CANCELADO:
+            raise JogoBloqueado()
+        if jogo.status != StatusJogo.EM_ANDAMENTO:
+            jogo.status = StatusJogo.EM_ANDAMENTO
         return self._repo.atualizar(jogo).to_dict()
 
-    def cancelar_jogo(self, id: int) -> dict:
-        jogo = self._repo.buscar_por_id(id)
+    def registrar_resultado(self, id_jogo: int, resultado: str) -> dict:
+        if resultado not in RESULTADOS_VALIDOS:
+            raise DadosJogoInvalidos(
+                f"Resultado inválido. Use: {','.join(RESULTADOS_VALIDOS)}", campo="resultado"
+            )
+
+        jogo = self._repo.buscar_por_id(id_jogo)
         if not jogo:
             raise JogoNaoEncontrado()
-        if jogo.status == StatusJogo.ENCERRADO:
-            raise JogoJaEncerrado()
+        if jogo.status == StatusJogo.FINALIZADO:
+            raise JogoJaFinalizado()
 
+        jogo.resultado_final = ResultadoFinal(resultado)
+        jogo.status = StatusJogo.FINALIZADO
+        return self._repo.atualizar(jogo).to_dict()
+       
+    def cancelar_jogo(self, id_jogo: int) -> dict:
+        jogo = self._repo.buscar_por_id(id_jogo)
+        if not jogo:
+            raise JogoNaoEncontrado()
+        if jogo.status == StatusJogo.CANCELADO:
+            raise JogoJaFinalizado()
         jogo.status = StatusJogo.CANCELADO
         return self._repo.atualizar(jogo).to_dict()
 
-    #Helpers internos
     @staticmethod
-    def _sanitizar(selecao_a, selecao_b, fase, estadio):
-        return selecao_a.strip(), selecao_b.strip(), fase.strip(), estadio.strip()
+    def _parse_horario(horario_str: str) -> time:
+        for fmt in ("%H:%M:%S", "%H:%M"):
+            try:
+                return datetime.strptime(horario_str, fmt).time()
+            except ValueError:
+                continue
+        raise DadosJogoInvalidos(
+            "Formato de horário inválido. Use HH:MM ou HH:MM:SS", campo="horario"
+        )
 
     @staticmethod
-    def _validar_criacao(selecao_a, selecao_b, horario, fase, estadio):
-        if not selecao_a:
-            raise DadosJogoInvalidos("Nome da seleção A é obrigatório.", campo="selecao_a")
-        if not selecao_b:
-            raise DadosJogoInvalidos("Nome da seleção B é obrigatório.", campo="selecao_b")
-        if selecao_a.lower() == selecao_b.lower():
-            raise DadosJogoInvalidos("As seleções não podem ser iguais.", campo="selecao_b")
-        if not fase:
-            raise DadosJogoInvalidos("Fase do torneio é obrigatória.", campo="fase")
-        if not estadio:
-            raise DadosJogoInvalidos("Estádio é obrigatório.", campo="estadio")
+    def _validar_criacao(fase, data_jogo, horario, time_a, time_b, pts_a, pts_emp, pts_b):
+        if fase not in FASES_VALIDAS: 
+            raise DadosJogoInvalidos(F"Fase inválida. Use: {','.join(FASES_VALIDAS)}", campo="fase")
+        
+        if not time_a: 
+            raise DadosJogoInvalidos("Nome do time a é obrigatório.", campo="time_a")
+        
+        if not time_b: 
+            raise DadosJogoInvalidos("Nome do time b é obrigatório", campo="time_b")
+        
+        if time_a.lower() == time_b.lower():
+            raise DadosJogoInvalidos("Os times não podem ser iguais", campo="time_b")
         try:
-            datetime.fromisoformat(horario)
+            date.fromisoformat(data_jogo)
         except (ValueError, TypeError):
-            raise DadosJogoInvalidos(
-                "Formato de horário inválido. Use ISO 8601 — ex: 2026-06-10T20:00:00",
-                campo="horario",
-            )
+            raise DadosJogoInvalidos("Formato de data inválido, use YYYY-MM-DD", campo="data_jogo")
+        for val, campo in [(pts_a, "pontos_time_a"), (pts_emp, "pontos_empate"), (pts_b, "pontos_time_b")]:
+            if int(val) < 0:
+                raise DadosJogoInvalidos("Pontuação não pode ser negativa", campo=campo)

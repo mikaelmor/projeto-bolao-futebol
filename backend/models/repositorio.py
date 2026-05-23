@@ -2,23 +2,27 @@ from abc import ABC, abstractmethod
 from .usuario import Usuario
 
 class RepositorioUsuario(ABC):
+    #persiste um novo usuario e retorna com id gerado
     @abstractmethod
     def salvar(self, usuario: Usuario) -> Usuario:
         ...
 
+    #retorna o usuario pelo email ou none se ñ encontrado
     @abstractmethod    
     def buscar_por_email(self, email: str) -> Usuario | None: 
         ...
 
+    # retorna o usuario pelo cpf (apenas digitos) ou none 
     @abstractmethod
     def buscar_por_cpf(self, cpf: str) -> Usuario| None:
         ...
 
+    # retorna usuário pelo id ou none
     @abstractmethod
     def buscar_por_id(self, id: int) -> Usuario | None:
         ...
 
-# implementçao em memoria
+
 class RepositorioEmMemoria(RepositorioUsuario):
     def __init__(self):
         self._usuarios: dict[int, Usuario] = {}
