@@ -47,7 +47,7 @@ const Home = () => {
       <div className="flex-grow bg-[#353839] border-t-2 border-[#aec4c3] p-4 sm:p-8">
         <div className="max-w-screen-xl mx-auto flex flex-col items-center gap-4">
           <div className="flex gap-12">
-            <Link to="/suporte" className="text-black hover:text-white font-sans uppercase text-[16px] tracking-wider transition font-static">Fale Conosco</Link>
+            
           </div>
           <p className="text-[12px] sm:text-[14px] text-center text-gray-400 mt-4 uppercase font-mono font italic">
             Copa do Mundo<span className="text-[#ffffff]"> © 2026 |</span> Jogue com Responsabilidade

@@ -12,7 +12,7 @@ const Profile = () => {
       try {
         const data = await fetchUserProfile();
         setProfile(data);
-        setImage(data.foto_perfil_url || null);
+        setImage((imagemAtual) => imagemAtual || data.foto_perfil_url || null);
       } catch (error) {
         alert(error.message);
         navigate("/login");
@@ -20,6 +20,9 @@ const Profile = () => {
     };
 
     carregarPerfil();
+    const intervalId = setInterval(carregarPerfil, 2000);
+
+    return () => clearInterval(intervalId);
   }, [navigate]);
 
   const handleImageUpload = async (e) => {

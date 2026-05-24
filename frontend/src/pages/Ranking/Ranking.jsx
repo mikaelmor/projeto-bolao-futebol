@@ -55,7 +55,6 @@ export default function Ranking() {
   useEffect(() => {
     const carregarRanking = async () => {
       try {
-        setLoading(true);
         const data = await fetchRanking();
         const ranking = (data.ranking || []).map((user) => ({
           id: user.id_usuario,
@@ -76,7 +75,11 @@ export default function Ranking() {
       }
     };
 
+    setLoading(true);
     carregarRanking();
+    const intervalId = setInterval(carregarRanking, 2000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   const top3 = users.slice(0, 3);

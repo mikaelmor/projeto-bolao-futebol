@@ -11,7 +11,7 @@ import Curiosidades from "./pages/Curiosidades/WorldCup-History";
 import Profile from "./pages/Perfil_do_Usuario/Profile";
 import Configurações from "./pages/Configurações";
 import Sidebar from "./components/Sidebar.jsx";
-
+import Admin from "./pages/Admin/Admin.jsx";
 
 
 
@@ -32,6 +32,7 @@ const routes = createBrowserRouter([
  { path: "/ranking", element: < Ranking />},
  { path: "/perfil", element: < Profile />},
  { path: "/configurações", element: < Configurações/>},
+  { path: "/admin", element: < Admin/>},
   ],
  }
 ]);

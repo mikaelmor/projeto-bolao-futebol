@@ -43,7 +43,7 @@ const Suporte = () => {
     <div className="suporte-container">
       <h1 className="faq-title">Perguntas Frequentes</h1>
       <div className="styled-wrapper back-button-position">
-                <button className="button" onClick={() => navigate("/")} type="button">
+                <button className="button" onClick={() => navigate("/configurações")} type="button">
                     <div className="button-box">
                         <span className="button-elem">
                             <svg viewBox="0 0 46 40" xmlns="http://www.w3.org/2000/svg">

@@ -53,7 +53,7 @@ export const fetchTodayGames = () => {
 };
 
 export const forgotPassword = (email) => {
-  return requestJson("/forgot-password", {
+  return requestJson("/api/recuperacao-senha/solicitar", {
     method: "POST",
     body: JSON.stringify({ email }),
   });
@@ -124,15 +124,15 @@ export const fetchSimulatedGames = () => {
 };
 
 export const submitGamePrediction = ({ jogoId, usuarioId, escolha }) => {
-  return requestJson(`/api/simulacao/jogos/${jogoId}/palpite`, {
+  return requestJson("/api/palpites/", {
     method: "POST",
-    body: JSON.stringify({ usuario_id: usuarioId, escolha }),
+    body: JSON.stringify({ id_usuario: usuarioId, id_jogo: jogoId, escolha }),
   });
 };
 
 export const removeGamePrediction = ({ jogoId, usuarioId }) => {
-  return requestJson(`/api/simulacao/jogos/${jogoId}/palpite`, {
+  return requestJson("/api/palpites/", {
     method: "DELETE",
-    body: JSON.stringify({ usuario_id: usuarioId }),
+    body: JSON.stringify({ id_usuario: usuarioId, id_jogo: jogoId }),
   });
 };

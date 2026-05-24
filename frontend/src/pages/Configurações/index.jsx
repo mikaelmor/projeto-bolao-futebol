@@ -182,6 +182,10 @@ const Configurações = () => {
                     Voltar
                     </ButtonConfig>
 
+                <ButtonConfig onClick={() => navigate("/suporte")}
+                  variant="danger">
+                    Fale Conosco
+                </ButtonConfig>
             </div>
 
       </div>

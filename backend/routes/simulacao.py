@@ -20,6 +20,12 @@ def _validar_dev_key():
 
 @simulacao_bp.get("/jogos")
 def listar_jogos_simulados():
+    finalizados = _get_service().finalizar_expirados()
+    palpite_service = current_app.config.get("PALPITE_SERVICE")
+    if palpite_service:
+        for jogo in finalizados:
+            palpite_service.avaliar_palpites_do_jogo(jogo["id"])
+
     return jsonify({"jogos": _get_service().listar_jogos()}), 200
 
 
@@ -76,7 +82,16 @@ def finalizar_jogo_simulado(jogo_id: int):
 
     try:
         jogo = _get_service().finalizar(jogo_id)
-        return jsonify({"mensagem": "Simulacao finalizada.", "jogo": jogo}), 200
+        palpites_avaliados = []
+        palpite_service = current_app.config.get("PALPITE_SERVICE")
+        if palpite_service:
+            palpites_avaliados = palpite_service.avaliar_palpites_do_jogo(jogo_id)
+
+        return jsonify({
+            "mensagem": "Simulacao finalizada.",
+            "jogo": jogo,
+            "palpites_avaliados": len(palpites_avaliados),
+        }), 200
     except ErroJogo as e:
         return jsonify(e.to_dict()), 400
 

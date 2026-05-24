@@ -4,7 +4,7 @@ import secrets
 import string
 
 MINIMO_CARACTERES = 5
-SIMBOLOS = "!@#$%&*"
+SIMBOLOS = "!@#$%&*_^"
 
 
 def gerar_senha_temporaria(tamanho: int = 10) -> str:

@@ -148,8 +148,12 @@
 .card-medal {
   font-size: 1.6rem;
   line-height: 1;
+  font-weight: 800;
 }
 .card.first .card-medal { font-size: 2rem; }
+.card.first .card-medal { color: #f5c518; }
+.card.second .card-medal { color: #b0b8c8; }
+.card.third .card-medal { color: #cd7f32; }
 
 .card-avatar {
   width: 58px;

@@ -22,6 +22,9 @@ class RepositorioPalpite(ABC):
     def buscar_por_usuario_e_jogo(self, id_usuario: int, id_jogo: int) -> Palpite | None: ...
 
     @abstractmethod
+    def excluir_por_usuario_e_jogo(self, id_usuario: int, id_jogo: int) -> Palpite | None: ...
+
+    @abstractmethod
     def listar_por_usuario(self, id_usuario: int) -> list[Palpite]: ...
 
     @abstractmethod
@@ -60,6 +63,12 @@ class RepositorioPalpiteEmMemoria(RepositorioPalpite):
              if p.id_usuario == id_usuario and p.id_jogo == id_jogo),
             None,
         )
+
+    def excluir_por_usuario_e_jogo(self, id_usuario: int, id_jogo: int) -> Palpite | None:
+        palpite = self.buscar_por_usuario_e_jogo(id_usuario, id_jogo)
+        if palpite:
+            self._palpites.pop(palpite.id_palpite, None)
+        return palpite
 
     def listar_por_usuario(self, id_usuario: int) -> list[Palpite]:
         return sorted(

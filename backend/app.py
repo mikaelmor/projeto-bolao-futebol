@@ -1,6 +1,9 @@
 #ponto de entrada da aplicação flask
 
+
 from flask import Flask, request, jsonify, send_from_directory
+from flask_socketio import SocketIO
+from routes.socket_events import registrar_eventos
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import secrets
@@ -20,7 +23,7 @@ def carregar_env_local():
             if not linha or linha.startswith("#") or "=" not in linha:
                 continue
             chave, valor = linha.split("=", 1)
-            os.environ.setdefault(chave.strip(), valor.strip().strip('"').strip("'"))
+            os.environ[chave.strip()] = valor.strip().strip('"').strip("'")
 
 
 carregar_env_local()
@@ -39,6 +42,7 @@ from services.simulacao_service import SimulacaoService
 from routes.simulacao import simulacao_bp
 from routes.configuracoes import configuracoes_bp
 from routes.perfil import perfil_bp
+from routes.recuperacao_senha import recuperacao_senha_bp
 
 #Módulo palpites
 from models.repositorio_palpite import RepositorioPalpiteEmMemoria
@@ -51,6 +55,11 @@ from routes.ranking import ranking_bp
 
 
 app = Flask(__name__)
+from flask_cors import CORS
+CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
+app.config["SOCKETIO"] = socketio
+registrar_eventos(socketio)
 app.secret_key = secrets.token_hex(32)
 
 users = {
@@ -103,6 +112,7 @@ app.config["SESSION_TOKENS"] = session_tokens
 app.config["USER_SETTINGS"] = {}
 app.register_blueprint(configuracoes_bp)
 app.register_blueprint(perfil_bp)
+app.register_blueprint(recuperacao_senha_bp)
 
 
 def carregar_jogos_iniciais():
@@ -242,24 +252,25 @@ def forgot_password():
     if not email or not is_valid_email(email):
         return jsonify({"success": False, "error": "Email inválido."}), 400
 
-    if email not in users:
-        return jsonify({
-            "success": True,
-            "message": "Se o email estiver cadastrado, você receberá as instruções em breve.",
-        }), 200
-
     token = secrets.token_urlsafe(32)
     reset_tokens[token] = {
-        "email": email,
-        "expires_at": datetime.utcnow() + timedelta(minutes=40)
-    }
+    "email": email,
+    "expires_at": datetime.utcnow() + timedelta(minutes=40)
+}
+
+    from routes.suporte import _enviar_email_suporte
+    try:
+        _enviar_email_suporte(
+            f"Você solicitou a recuperação de senha do GoalPoint.\n\nSeu token de recuperação é:\n\n{token}\n\nExpira em 40 minutos."
+        )
+    except Exception as e:
+        print(f"Erro ao enviar email: {e}")
 
     return jsonify({
         "success": True,
-        "message": "Token de reset gerado.",
-        "reset_token": token,
-        "expires_in": "40 minutos",
-    }), 200
+        "message": "Se o email estiver cadastrado, você receberá as instruções em breve.",
+    }),200
+  
 
 
 @app.route("/reset-password", methods=["GET", "POST"])
@@ -300,6 +311,5 @@ def reset_password():
 
     return jsonify({"success": True, "message": "Senha redefinida com sucesso."}), 200
 
-
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    socketio.run(app, debug=True, port=5000, use_reloader=False)

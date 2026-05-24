@@ -49,6 +49,44 @@ class PalpiteService:
         )
         palpite = self._repo.salvar(palpite)
         return self._enriquecer(palpite, jogo)
+
+    def salvar_palpite(self, id_usuario: int, id_jogo: int, escolha: str) -> dict:
+        escolha = escolha.strip().lower()
+        if escolha not in ESCOLHAS_VALIDAS:
+            raise EscolhaInvalida()
+
+        jogo = self._repo_jogo.buscar_por_id(id_jogo)
+        if not jogo:
+            from models.jogo import JogoNaoEncontrado
+            raise JogoNaoEncontrado()
+
+        if not jogo.aberto_para_palpites:
+            raise PalpiteBloqueado()
+
+        palpite = self._repo.buscar_por_usuario_e_jogo(id_usuario, id_jogo)
+        if palpite:
+            palpite.escolha = EscolhaPalpite(escolha)
+            palpite.acertou = None
+            palpite.pontos_ganhos = 0
+            palpite = self._repo.atualizar(palpite)
+            return self._enriquecer(palpite, jogo)
+
+        return self.criar_palpite(id_usuario, id_jogo, escolha)
+
+    def remover_palpite_do_jogo(self, id_usuario: int, id_jogo: int) -> dict:
+        jogo = self._repo_jogo.buscar_por_id(id_jogo)
+        if not jogo:
+            from models.jogo import JogoNaoEncontrado
+            raise JogoNaoEncontrado()
+
+        if not jogo.aberto_para_palpites:
+            raise PalpiteBloqueado()
+
+        palpite = self._repo.excluir_por_usuario_e_jogo(id_usuario, id_jogo)
+        if not palpite:
+            raise PalpiteNaoEncontrado()
+
+        return self._enriquecer(palpite, jogo)
     
     def editar_palpite(self, id_palpite: int, id_usuario: int, nova_escolha: str) -> dict:
         nova_escolha = nova_escolha.strip().lower()

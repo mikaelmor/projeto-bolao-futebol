@@ -120,7 +120,7 @@ def iniciar_jogo(id_jogo: int):
         return jsonify(e.to_dict()), 400
 
 #POST /api/jogos/<id>/resultado 
-@jogos_bp.post("/<int:id>/resultado")
+@jogos_bp.post("/<int:id_jogo>/resultado")
 def registrar_resultado(id_jogo: int):
     
     dados = request.get_json(silent=True) or {}
@@ -128,12 +128,22 @@ def registrar_resultado(id_jogo: int):
         return jsonify({"erro": "Informe o campo resultado: time_a | empate | time_b"}), 422
     try:
         jogo = _get_service().registrar_resultado(id_jogo, dados["resultado"])
-        return jsonify({"mensagem": "Resultado registrado.", "jogo": jogo}), 200
+        from flask import current_app
+        palpites_avaliados = []
+        palpite_service = current_app.config.get("PALPITE_SERVICE")
+        if palpite_service:
+            palpites_avaliados = palpite_service.avaliar_palpites_do_jogo(id_jogo)
+
+        return jsonify({
+            "mensagem": "Resultado registrado.",
+            "jogo": jogo,
+            "palpites_avaliados": len(palpites_avaliados),
+        }), 200
     except ErroJogo as e:
         return jsonify(e.to_dict()), 400
 
 #PATCH /api/jogos/<id>/cancelar
-@jogos_bp.patch("/<int:id>/cancelar")
+@jogos_bp.patch("/<int:id_jogo>/cancelar")
 def cancelar_jogo(id_jogo: int):
     try:
         return jsonify(_get_service().cancelar_jogo(id_jogo)), 200

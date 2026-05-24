@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { fetchSimulatedGames, removeGamePrediction, submitGamePrediction } from "../services/api";
+import { io } from "socket.io-client";
 import Brasil from "../imagens/escudo_brasil.png";
 import Argentina from "../imagens/escudo_argentina.png";
 import Qatar from "../imagens/escudo_catar.png";
@@ -8,6 +9,9 @@ import Ira from "../imagens/escudo_iran.png";
 import Portugal from "../imagens/escudo_portugal.png";
 import Espanha from "../imagens/escudo_spain.png";
 import America from "../imagens/escudo_usa.png";
+
+
+const socket = io("http://localhost:5000");
 
 
 const escudos = {
@@ -22,16 +26,11 @@ const escudos = {
 };
 
 const getOrCreateUsuarioId = () => {
-  const storageKey = "goalpoint_usuario_simulacao";
-  const storedId = localStorage.getItem(storageKey);
-
-  if (storedId) {
-    return storedId;
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+  if (user?.id) {
+    return user.id;
   }
-
-  const newId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
-  localStorage.setItem(storageKey, newId);
-  return newId;
+  return null;
 };
 
 const formatTime = (isoDate) => {
@@ -68,9 +67,17 @@ export default function JogoCard({ searchTerm }) {
 
   useEffect(() => {
     carregarJogos();
-    const intervalId = setInterval(carregarJogos, 2000);
+    const intervalId = setInterval(carregarJogos, 1000);
+     socket.on("jogo:atualizado", ({ jogo }) => {
+      setJogos((prev) =>
+        prev.map((j) => (j.id === jogo.id ? jogo : j))
+      );
+    });
 
-    return () => clearInterval(intervalId);
+    return () =>  {
+      clearInterval(intervalId);
+      socket.off("jogo:atualizado");
+    };
   }, []);
 
   useEffect(() => {
@@ -97,6 +104,11 @@ export default function JogoCard({ searchTerm }) {
   }, [searchTerm, jogos]);
 
   const handlePrediction = async (jogoId, escolha) => {
+    if (!usuarioId) {
+      alert("Faca login para registrar seu palpite.");
+      return;
+    }
+
     try {
       const isSamePrediction = palpites[jogoId] === escolha;
 
@@ -172,17 +184,17 @@ export default function JogoCard({ searchTerm }) {
             </p>
             <p className="text-xl font-bold">{formatTime(jogo.horario)}</p>
 
-            {jogo.status === "em_andamento" && (
-              <p className="text-xs text-red-600 font-bold mt-1">
-                Ao vivo {jogo.simulacao?.minuto ?? 0}'
-              </p>
-            )}
+           {jogo.status === "em_andamento" && (jogo.simulacao?.minuto ?? 0) < 90 && (
+            <p className="text-xs text-red-600 font-bold mt-1">
+               Ao vivo {jogo.simulacao?.minuto ?? 0}'
+             </p>
+              )}
 
-            {jogo.status === "encerrado" && (
+            {(jogo.status === "encerrado" || (jogo.status === "em_andamento" && (jogo.simulacao?.minuto ?? 0) >= 90)) && (
               <p className="text-xs text-emerald-700 font-bold mt-1">
-                Encerrado
-              </p>
-            )}
+              Finalizado
+                 </p>
+              )}
 
             <div className="flex justify-between items-center mt-4">
               <div className="flex flex-col items-center">
@@ -201,8 +213,8 @@ export default function JogoCard({ searchTerm }) {
             <div className="flex justify-between gap-2 mt-2">
               <button
                 disabled={isLocked}
-                onClick={() => handlePrediction(jogo.id, "time1")}
-                className={`${buttonClass(jogo.id, "time1")} disabled:opacity-60 disabled:cursor-not-allowed`}
+                onClick={() => handlePrediction(jogo.id, "time_a")}
+                className={`${buttonClass(jogo.id, "time_a")} disabled:opacity-60 disabled:cursor-not-allowed`}
               >
                 <span className="relative z-10" style={{ fontFamily: "Monospace" }}>
                   {jogo.selecao_a} <br /> 10 pontos
@@ -212,8 +224,8 @@ export default function JogoCard({ searchTerm }) {
 
               <button
                 disabled={isLocked}
-                onClick={() => handlePrediction(jogo.id, "draw")}
-                className={`${buttonClass(jogo.id, "draw")} disabled:opacity-60 disabled:cursor-not-allowed`}
+                onClick={() => handlePrediction(jogo.id, "empate")}
+                className={`${buttonClass(jogo.id, "empate")} disabled:opacity-60 disabled:cursor-not-allowed`}
               >
                 <span className="relative z-10" style={{ fontFamily: "Monospace" }}>
                   Empate <br /> 3 pontos
@@ -223,8 +235,8 @@ export default function JogoCard({ searchTerm }) {
 
               <button
                 disabled={isLocked}
-                onClick={() => handlePrediction(jogo.id, "time2")}
-                className={`${buttonClass(jogo.id, "time2")} disabled:opacity-60 disabled:cursor-not-allowed`}
+                onClick={() => handlePrediction(jogo.id, "time_b")}
+                className={`${buttonClass(jogo.id, "time_b")} disabled:opacity-60 disabled:cursor-not-allowed`}
               >
                 <span className="relative z-10" style={{ fontFamily: "Monospace" }}>
                   {jogo.selecao_b} <br /> 10 pontos

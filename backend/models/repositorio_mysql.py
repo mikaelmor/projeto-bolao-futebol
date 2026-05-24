@@ -326,6 +326,19 @@ class RepositorioPalpiteMySQL(RepositorioPalpite):
         row = cursor.fetchone()
         return self._row_para_palpite(row) if row else None
 
+    def excluir_por_usuario_e_jogo(self, id_usuario: int, id_jogo: int) -> Palpite | None:
+        palpite = self.buscar_por_usuario_e_jogo(id_usuario, id_jogo)
+        if not palpite:
+            return None
+
+        cursor = self._conn.cursor()
+        cursor.execute(
+            "DELETE FROM palpites WHERE id_usuario = %s AND id_jogo = %s",
+            (id_usuario, id_jogo),
+        )
+        self._conn.commit()
+        return palpite
+
     def listar_por_usuario(self, id_usuario: int) -> list[Palpite]:
         cursor = self._conn.cursor(dictionary=True)
         cursor.execute(

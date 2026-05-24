@@ -16,7 +16,7 @@ PLACARES_POSSIVEIS = [
     (2, 1),
     (3, 1),
     (1, 1),
-    (0, 0),
+    (0, 3),
 ]
 
 
@@ -30,6 +30,17 @@ class SimulacaoService:
     def listar_jogos(self) -> list[dict]:
         jogos = self._jogo_service.listar_todos()
         return [self._com_simulacao(jogo) for jogo in jogos]
+
+    def finalizar_expirados(self) -> list[dict]:
+        finalizados = []
+        agora = datetime.utcnow()
+
+        for jogo_id, simulacao in list(self._simulacoes.items()):
+            decorrido = max(0, int((agora - simulacao["inicio"]).total_seconds()))
+            if decorrido >= simulacao["duracao_segundos"]:
+                finalizados.append(self.finalizar(jogo_id))
+
+        return finalizados
 
     def registrar_palpite(self, jogo_id: int, usuario_id: str, escolha: str) -> dict:
         jogo = self._jogo_service.buscar_jogo(jogo_id)
@@ -95,6 +106,28 @@ class SimulacaoService:
         self._simulacoes.pop(jogo_id, None)
         self._placares_finalizados[jogo_id] = placar_final
         return self._com_simulacao(jogo)
+
+    def definir_resultado_planejado(self, jogo_id: int, resultado: str) -> dict:
+        if resultado not in ("time_a", "empate", "time_b"):
+            raise ErroJogo("Resultado invalido. Use: time_a | empate | time_b", campo="resultado")
+        if jogo_id not in self._simulacoes:
+            raise ErroJogo("Este jogo nao esta em simulacao.", campo="status")
+
+        simulacao = self._simulacoes[jogo_id]
+        decorrido = max(0, int((datetime.utcnow() - simulacao["inicio"]).total_seconds()))
+        placar_atual = self._placar_atual(simulacao, decorrido)
+        placar_final = self._placar_para_resultado(resultado, placar_atual)
+
+        simulacao["placar_final"] = placar_final
+        simulacao["gols"] = self._gerar_gols_restantes(
+            simulacao["gols"],
+            placar_final,
+            placar_atual,
+            decorrido,
+            simulacao["duracao_segundos"],
+        )
+
+        return self._com_simulacao(self._jogo_service.buscar_jogo(jogo_id))
 
     def atualizar_duracao(self, jogo_id: int, duracao_segundos: int) -> dict:
         if jogo_id not in self._simulacoes:
@@ -174,6 +207,7 @@ class SimulacaoService:
             "estadio": "Estadio GoalPoint",
             "grupo": None,
             "status": status_map.get(jogo.get("status"), jogo.get("status")),
+            "resultado_final": jogo.get("resultado_final"),
             "placar": None,
             "vencedor": None,
             "criado_em": None,
@@ -205,6 +239,18 @@ class SimulacaoService:
         return max(10, min(duracao, 3600))
 
     @staticmethod
+    def _placar_para_resultado(resultado: str, placar_atual: tuple[int, int]) -> tuple[int, int]:
+        gols_a, gols_b = placar_atual
+
+        if resultado == "time_a":
+            return max(gols_a, gols_b + 1), gols_b
+        if resultado == "time_b":
+            return gols_a, max(gols_b, gols_a + 1)
+
+        gols_empate = max(gols_a, gols_b)
+        return gols_empate, gols_empate
+
+    @staticmethod
     def _gerar_gols(placar_final: tuple[int, int], duracao_segundos: int) -> list[dict]:
         gols = []
         for lado, total in (("a", placar_final[0]), ("b", placar_final[1])):
@@ -213,6 +259,30 @@ class SimulacaoService:
                     "lado": lado,
                     "segundo": random.randint(5, max(5, duracao_segundos - 3)),
                 })
+        return sorted(gols, key=lambda gol: gol["segundo"])
+
+    @staticmethod
+    def _gerar_gols_restantes(
+        gols_atuais: list[dict],
+        placar_final: tuple[int, int],
+        placar_atual: tuple[int, int],
+        segundo_atual: int,
+        duracao_segundos: int,
+    ) -> list[dict]:
+        gols = [gol for gol in gols_atuais if gol["segundo"] <= segundo_atual]
+        inicio = min(duracao_segundos, segundo_atual + 1)
+        fim = max(inicio, duracao_segundos - 3)
+
+        for lado, final, atual in (
+            ("a", placar_final[0], placar_atual[0]),
+            ("b", placar_final[1], placar_atual[1]),
+        ):
+            for _ in range(max(0, final - atual)):
+                gols.append({
+                    "lado": lado,
+                    "segundo": random.randint(inicio, fim),
+                })
+
         return sorted(gols, key=lambda gol: gol["segundo"])
 
     @staticmethod

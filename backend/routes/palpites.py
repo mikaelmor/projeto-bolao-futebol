@@ -24,12 +24,29 @@ def criar_palpite():
     if ausentes:
         return jsonify({"erro": "Campos obrigatórios ausentes.", "campos": ausentes}), 422
     try:
-        palpite = _get_service().criar_palpite(
+        palpite = _get_service().salvar_palpite(
             id_usuario=int(dados["id_usuario"]),
             id_jogo=int(dados["id_jogo"]),
             escolha=dados["escolha"],
         )
         return jsonify({"mensagem": "Palpite registrado com sucesso.", "palpite": palpite}), 201
+    except (ErroPalpite, ErroJogo) as e:
+        return jsonify(e.to_dict()), 400
+
+
+@palpites_bp.delete("/")
+def remover_palpite():
+    dados = request.get_json(silent=True) or {}
+    ausentes = [c for c in ["id_usuario", "id_jogo"] if dados.get(c) is None]
+    if ausentes:
+        return jsonify({"erro": "Campos obrigatÃ³rios ausentes.", "campos": ausentes}), 422
+
+    try:
+        palpite = _get_service().remover_palpite_do_jogo(
+            id_usuario=int(dados["id_usuario"]),
+            id_jogo=int(dados["id_jogo"]),
+        )
+        return jsonify({"mensagem": "Palpite removido com sucesso.", "palpite": palpite}), 200
     except (ErroPalpite, ErroJogo) as e:
         return jsonify(e.to_dict()), 400
 

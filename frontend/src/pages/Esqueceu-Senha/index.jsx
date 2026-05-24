@@ -1,16 +1,35 @@
-import { FaEnvelope } from "react-icons/fa"
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-
+import { FaEnvelope } from "react-icons/fa";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { forgotPassword } from "../../services/api";
 
 const EsqueceuSenha = () => {
     const [email, setEmail] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [mensagem, setMensagem] = useState("");
+    const [erro, setErro] = useState("");
+    const [senhaTemporaria, setSenhaTemporaria] = useState("");
     const navigate = useNavigate();
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
-        alert("Link de recuperação enviado para: " + email);
-    }
+        setLoading(true);
+        setMensagem("");
+        setErro("");
+        setSenhaTemporaria("");
+
+        try {
+            const data = await forgotPassword(email);
+            setMensagem(data.mensagem || "Recuperacao solicitada com sucesso.");
+            if (data.senha_temporaria) {
+                setSenhaTemporaria(data.senha_temporaria);
+            }
+        } catch (error) {
+            setErro(error.message || "Nao foi possivel recuperar a senha.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="Login">
@@ -34,22 +53,43 @@ const EsqueceuSenha = () => {
             <div className="login-container">
                 <form onSubmit={handleSubmit}>
                     <h1>Recuperar Senha</h1>
-                    
-                    <p style={{ color: 'yellow', textAlign: 'center', marginBottom: '20px', fontSize: '14px' }}>
-                        Insira o seu e-mail cadastrado para receber as instruções de recuperação.
+
+                    <p style={{ color: "yellow", textAlign: "center", marginBottom: "20px", fontSize: "14px" }}>
+                        Insira o seu e-mail cadastrado para receber as instrucoes de recuperacao.
                     </p>
 
                     <div className="input-field">
-                        <input 
-                            type="email" 
+                        <input
+                            type="email"
                             placeholder="Seu e-mail"
-                            required 
+                            required
+                            value={email}
                             onChange={(e) => setEmail(e.target.value)}
                         />
-                        <FaEnvelope className="icon"/>
+                        <FaEnvelope className="icon" />
                     </div>
 
-                    <button type="submit">Enviar Instruções</button>
+                    {mensagem && (
+                        <p style={{ color: "#86efac", textAlign: "center", marginBottom: 12, fontSize: 14 }}>
+                            {mensagem}
+                        </p>
+                    )}
+
+                    {senhaTemporaria && (
+                        <p style={{ color: "yellow", textAlign: "center", marginBottom: 12, fontSize: 14 }}>
+                            Senha temporaria: <strong>{senhaTemporaria}</strong>
+                        </p>
+                    )}
+
+                    {erro && (
+                        <p style={{ color: "#fca5a5", textAlign: "center", marginBottom: 12, fontSize: 14 }}>
+                            {erro}
+                        </p>
+                    )}
+
+                    <button type="submit" disabled={loading}>
+                        {loading ? "Enviando..." : "Enviar Instrucoes"}
+                    </button>
 
                     <div className="signup-link">
                         <p>Lembrou a senha? <a href="/login" onClick={(e) => { e.preventDefault(); navigate("/login"); }}>Voltar ao Login</a></p>
@@ -57,7 +97,7 @@ const EsqueceuSenha = () => {
                 </form>
             </div>
         </div>
-    )
-}
+    );
+};
 
 export default EsqueceuSenha;
