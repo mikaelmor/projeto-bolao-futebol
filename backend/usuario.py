@@ -64,8 +64,8 @@ class EmailInvalido(ErroCadastro):
         super().__init__("Email inválido.", campo="email")
 
 class SenhaFraca(ErroCadastro):
-    def __init__(self):
-        super().__init__("A senha deve ter pelo menos 6 caracteres", campo="senha")
+    def __init__(self, mensagem: str = "A senha deve ter pelo menos 5 caracteres e um caractere especial"):
+        super().__init__(mensagem, campo="senha")
 
 class UsuarioJaExiste(ErroCadastro):
     def __init__(self, campo:str):

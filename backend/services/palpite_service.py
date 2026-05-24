@@ -16,12 +16,12 @@ ESCOLHAS_VALIDAS = {e.value for e in EscolhaPalpite}
 
 class PalpiteService:
     def __init__(
-            self,
-            repositorio_palpite: RepositorioPalpite,
-            repositorio_jogo: RepositorioJogo,
+        self,
+        repositorio_palpite: RepositorioPalpite,
+        repositorio_jogo: RepositorioJogo,
     ):
         self._repo = repositorio_palpite
-        self._rapo_jogo = repositorio_jogo
+        self._repo_jogo = repositorio_jogo
 
 #criar palpite
     def criar_palpite(self, id_usuario: int, id_jogo: int, escolha: str) -> dict:

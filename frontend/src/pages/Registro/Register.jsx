@@ -125,7 +125,11 @@ const Registro = () => {
                     type={showPassword ? "text" : "password"}
                     name="password" 
                     placeholder="Senha" 
-                    required onChange={handleChange} 
+                    required
+                    minLength={5}
+                    pattern="^(?=.*[A-Za-z0-9])(?=.*[!@#$%&*]).{5,}$"
+                    title="A senha deve ter pelo menos 5 caracteres, uma letra ou numero e um caractere especial (!@#$%&*)"
+                    onChange={handleChange} 
                     />
                     {showPassword ? (
                      <FaLockOpen 
@@ -148,6 +152,9 @@ const Registro = () => {
                     name="confirmPassword" 
                     placeholder="Confirmar Senha" 
                     required 
+                    minLength={5}
+                    pattern="^(?=.*[A-Za-z0-9])(?=.*[!@#$%&*]).{5,}$"
+                    title="A senha deve ter pelo menos 5 caracteres, uma letra ou numero e um caractere especial (!@#$%&*)"
                     onChange={handleChange} 
                     />
                     {showConfirmPassword ? (

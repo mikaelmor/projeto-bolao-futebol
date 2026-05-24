@@ -1,10 +1,10 @@
-"""
-models/repositorio_mysql.py - implementações MySQL de todos os repositórios do GoalPoint
-"""
 import os
+import re
 from datetime import date, datetime, time
+
 import mysql.connector
 from mysql.connector.connection import MySQLConnection
+
 from models.jogo import FaseJogo, Jogo, ResultadoFinal, StatusJogo
 from models.palpite import EscolhaPalpite, Palpite
 from models.repositorio import RepositorioUsuario
@@ -12,23 +12,109 @@ from models.repositorio_jogo import RepositorioJogo
 from models.repositorio_palpite import RepositorioPalpite
 from models.usuario import Usuario
 
-# Conexão 
-def criar_conexao() -> MySQLConnection:
 
+def criar_conexao() -> MySQLConnection:
     return mysql.connector.connect(
         host=os.getenv("DB_HOST", "localhost"),
         port=int(os.getenv("DB_PORT", 3306)),
         user=os.getenv("DB_USER", "root"),
         password=os.getenv("DB_PASSWORD", ""),
-        database=os.getenv("DB_NAME", "goalpoint"),
+        database=os.getenv("DB_NAME", "goalpoint_def"),
         charset="utf8mb4",
         autocommit=False,
     )
 
-#Repositório de Usuários 
+
+def criar_schema(conn: MySQLConnection) -> None:
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS usuarios (
+          id_usuario INT PRIMARY KEY AUTO_INCREMENT,
+          nome VARCHAR(100) NOT NULL,
+          email VARCHAR(150) NOT NULL UNIQUE,
+          cpf CHAR(11) NOT NULL UNIQUE,
+          senha_hash VARCHAR(255) NOT NULL,
+          foto_perfil_url VARCHAR(255) NULL,
+          data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT chk_usuarios_cpf_formato CHECK (cpf REGEXP '^[0-9]{11}$')
+        )
+        """
+    )
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS jogos (
+          id_jogo INT PRIMARY KEY AUTO_INCREMENT,
+          fase ENUM('grupos','oitavas','quartas','semifinal','terceiro_lugar','final') NOT NULL,
+          data_jogo DATE NOT NULL,
+          horario TIME NOT NULL,
+          time_a VARCHAR(100) NOT NULL,
+          time_b VARCHAR(100) NOT NULL,
+          status ENUM('disponivel','em_andamento','finalizado','cancelado') DEFAULT 'disponivel',
+          resultado_final ENUM('time_a','empate','time_b') NULL,
+          pontos_time_a INT NOT NULL,
+          pontos_empate INT NOT NULL,
+          pontos_time_b INT NOT NULL
+        )
+        """
+    )
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS palpites (
+          id_palpite INT PRIMARY KEY AUTO_INCREMENT,
+          id_usuario INT NOT NULL,
+          id_jogo INT NOT NULL,
+          escolha ENUM('time_a','empate','time_b') NOT NULL,
+          data_palpite DATETIME DEFAULT CURRENT_TIMESTAMP,
+          acertou BOOLEAN NULL,
+          pontos_ganhos INT DEFAULT 0,
+          FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario),
+          FOREIGN KEY (id_jogo) REFERENCES jogos(id_jogo),
+          UNIQUE (id_usuario, id_jogo)
+        )
+        """
+    )
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS faq (
+          id_faq INT PRIMARY KEY AUTO_INCREMENT,
+          pergunta TEXT NOT NULL,
+          resposta TEXT NOT NULL
+        )
+        """
+    )
+
+    _adicionar_coluna_se_nao_existir(conn, "usuarios", "foto_perfil_url", "VARCHAR(255) NULL")
+    conn.commit()
+
+
+def _adicionar_coluna_se_nao_existir(
+    conn: MySQLConnection,
+    tabela: str,
+    coluna: str,
+    definicao: str,
+) -> None:
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = %s
+          AND COLUMN_NAME = %s
+        """,
+        (tabela, coluna),
+    )
+    existe = cursor.fetchone()["total"] > 0
+    if not existe:
+        cursor.execute(f"ALTER TABLE {tabela} ADD COLUMN {coluna} {definicao}")
+
 
 class RepositorioUsuarioMySQL(RepositorioUsuario):
-
     def __init__(self, conn: MySQLConnection):
         self._conn = conn
 
@@ -36,10 +122,10 @@ class RepositorioUsuarioMySQL(RepositorioUsuario):
         cursor = self._conn.cursor()
         cursor.execute(
             """
-            INSERT INTO usuarios (nome, email, senha_hash)
-            VALUES (%s, %s, %s)
+            INSERT INTO usuarios (nome, email, cpf, senha_hash, foto_perfil_url)
+            VALUES (%s, %s, %s, %s, %s)
             """,
-            (usuario.nome, usuario.email, usuario.senha_hash),
+            (usuario.nome, usuario.email, usuario.cpf, usuario.senha_hash, usuario.foto_perfil_url),
         )
         self._conn.commit()
         usuario.id = cursor.lastrowid
@@ -52,8 +138,11 @@ class RepositorioUsuarioMySQL(RepositorioUsuario):
         return self._row_para_usuario(row) if row else None
 
     def buscar_por_cpf(self, cpf: str) -> Usuario | None:
-        # CPF ñ está no banco SQL — retorna None 
-        return None
+        cpf_limpo = re.sub(r"\D", "", cpf)
+        cursor = self._conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM usuarios WHERE cpf = %s", (cpf_limpo,))
+        row = cursor.fetchone()
+        return self._row_para_usuario(row) if row else None
 
     def buscar_por_id(self, id: int) -> Usuario | None:
         cursor = self._conn.cursor(dictionary=True)
@@ -61,21 +150,38 @@ class RepositorioUsuarioMySQL(RepositorioUsuario):
         row = cursor.fetchone()
         return self._row_para_usuario(row) if row else None
 
+    def atualizar(self, usuario: Usuario) -> Usuario:
+        cursor = self._conn.cursor()
+        cursor.execute(
+            """
+            UPDATE usuarios
+            SET nome = %s, senha_hash = %s, foto_perfil_url = %s
+            WHERE id_usuario = %s
+            """,
+            (usuario.nome, usuario.senha_hash, usuario.foto_perfil_url, usuario.id),
+        )
+        self._conn.commit()
+        return usuario
+
+    def listar_todos(self) -> list[Usuario]:
+        cursor = self._conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM usuarios ORDER BY nome")
+        return [self._row_para_usuario(row) for row in cursor.fetchall()]
+
     @staticmethod
     def _row_para_usuario(row: dict) -> Usuario:
         return Usuario(
             id=row["id_usuario"],
             nome=row["nome"],
             email=row["email"],
-            cpf="",                   
+            cpf=row["cpf"],
             senha_hash=row["senha_hash"],
+            foto_perfil_url=row.get("foto_perfil_url"),
             criado_em=row.get("data_cadastro", datetime.utcnow()),
         )
 
 
-# Repositório de Jogos
 class RepositorioJogoMySQL(RepositorioJogo):
-
     def __init__(self, conn: MySQLConnection):
         self._conn = conn
 
@@ -140,22 +246,18 @@ class RepositorioJogoMySQL(RepositorioJogo):
 
     def listar_por_data(self, data: date) -> list[Jogo]:
         cursor = self._conn.cursor(dictionary=True)
-        cursor.execute(
-            "SELECT * FROM jogos WHERE data_jogo = %s ORDER BY horario",
-            (data,),
-        )
-        return [self._row_para_jogo(r) for r in cursor.fetchall()]
+        cursor.execute("SELECT * FROM jogos WHERE data_jogo = %s ORDER BY horario", (data,))
+        return [self._row_para_jogo(row) for row in cursor.fetchall()]
 
     def listar_todos(self) -> list[Jogo]:
         cursor = self._conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM jogos ORDER BY data_jogo, horario")
-        return [self._row_para_jogo(r) for r in cursor.fetchall()]
+        return [self._row_para_jogo(row) for row in cursor.fetchall()]
 
     @staticmethod
     def _row_para_jogo(row: dict) -> Jogo:
         horario = row["horario"]
-        # mysql-connector retorna timedelta para TIME
-        if hasattr(horario, "seconds"):
+        if hasattr(horario, "total_seconds"):
             total = int(horario.total_seconds())
             horario = time(total // 3600, (total % 3600) // 60, total % 60)
 
@@ -173,9 +275,8 @@ class RepositorioJogoMySQL(RepositorioJogo):
             pontos_time_b=row["pontos_time_b"],
         )
 
-#Repositório de Palpites
-class RepositorioPalpiteMySQL(RepositorioPalpite):
 
+class RepositorioPalpiteMySQL(RepositorioPalpite):
     def __init__(self, conn: MySQLConnection):
         self._conn = conn
 
@@ -231,20 +332,17 @@ class RepositorioPalpiteMySQL(RepositorioPalpite):
             "SELECT * FROM palpites WHERE id_usuario = %s ORDER BY data_palpite DESC",
             (id_usuario,),
         )
-        return [self._row_para_palpite(r) for r in cursor.fetchall()]
+        return [self._row_para_palpite(row) for row in cursor.fetchall()]
 
     def listar_por_jogo(self, id_jogo: int) -> list[Palpite]:
         cursor = self._conn.cursor(dictionary=True)
-        cursor.execute(
-            "SELECT * FROM palpites WHERE id_jogo = %s",
-            (id_jogo,),
-        )
-        return [self._row_para_palpite(r) for r in cursor.fetchall()]
+        cursor.execute("SELECT * FROM palpites WHERE id_jogo = %s", (id_jogo,))
+        return [self._row_para_palpite(row) for row in cursor.fetchall()]
 
     def listar_todos(self) -> list[Palpite]:
         cursor = self._conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM palpites ORDER BY data_palpite DESC")
-        return [self._row_para_palpite(r) for r in cursor.fetchall()]
+        return [self._row_para_palpite(row) for row in cursor.fetchall()]
 
     @staticmethod
     def _row_para_palpite(row: dict) -> Palpite:

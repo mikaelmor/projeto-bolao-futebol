@@ -1,14 +1,35 @@
-from flask import Flask, request, jsonify
+#ponto de entrada da aplicação flask
+
+from flask import Flask, request, jsonify, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import secrets
 import re
 from datetime import datetime, timedelta
+from utils.senha import validar_forca_senha, verificar_senha
+
+
+def carregar_env_local():
+    env_path = os.path.join(os.path.dirname(__file__), ".env")
+    if not os.path.exists(env_path):
+        return
+
+    with open(env_path, "r", encoding="utf-8") as env_file:
+        for linha in env_file:
+            linha = linha.strip()
+            if not linha or linha.startswith("#") or "=" not in linha:
+                continue
+            chave, valor = linha.split("=", 1)
+            os.environ.setdefault(chave.strip(), valor.strip().strip('"').strip("'"))
+
+
+carregar_env_local()
 
 #Módulo de cadastro
 from models.repositorio import RepositorioEmMemoria
 from services.cadastro_service import CadastroService
 from routes.cadastro import cadastro_bp
+
 #Módulo de jogos 
 from models.repositorio_jogo import RepositorioJogoEmMemoria
 from services.jogo_service import JogoService
@@ -16,12 +37,22 @@ from routes.jogos import jogos_bp
 from routes.suporte import suporte_bp
 from services.simulacao_service import SimulacaoService
 from routes.simulacao import simulacao_bp
+from routes.configuracoes import configuracoes_bp
+from routes.perfil import perfil_bp
+
+#Módulo palpites
+from models.repositorio_palpite import RepositorioPalpiteEmMemoria
+from services.palpite_service import PalpiteService
+from routes.palpites import palpites_bp
+
+#módulo ranking
+from services.ranking_service import RankingService
+from routes.ranking import ranking_bp
 
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
 
-#Armazenamento em memória (substituir pelo BD) 
 users = {
     "usuario@exemplo.com": {
         "password_hash": generate_password_hash("senha123"),
@@ -30,18 +61,48 @@ users = {
 }
 
 reset_tokens = {}
+session_tokens = {}
+
+try:
+    from models.repositorio_mysql import criar_conexao, RepositorioUsuarioMySQL
+    from models.repositorio_mysql import RepositorioJogoMySQL, RepositorioPalpiteMySQL
+    from models.repositorio_mysql import criar_schema
+
+    _conn = criar_conexao()
+    criar_schema(_conn)
+    _repo_usuario = RepositorioUsuarioMySQL(_conn)
+    _repo_jogo = RepositorioJogoMySQL(_conn)
+    _repo_palpite = RepositorioPalpiteMySQL(_conn)
+    print("Banco MySQL conectado.")
+except Exception as exc:
+    print(f"Banco MySQL indisponivel, usando memoria: {exc}")
+    _conn = None
+    _repo_usuario = RepositorioEmMemoria()
+    _repo_jogo = RepositorioJogoEmMemoria()
+    _repo_palpite = RepositorioPalpiteEmMemoria()
 
 #Registro dos módulos
-app.config["CADASTRO_SERVICE"] = CadastroService(RepositorioEmMemoria())
+app.config["CADASTRO_SERVICE"] = CadastroService(_repo_usuario)
 app.register_blueprint(cadastro_bp)
 
 app.config["DEV_SIMULATION_KEY"] = os.environ.get("GOALPOINT_DEV_KEY", "goalpoint-dev")
-app.config["JOGO_SERVICE"] = JogoService(RepositorioJogoEmMemoria())
+app.config["JOGO_SERVICE"] = JogoService(_repo_jogo)
 app.register_blueprint(jogos_bp)
 
 app.register_blueprint(suporte_bp)
 app.config["SIMULACAO_SERVICE"] = SimulacaoService(app.config["JOGO_SERVICE"])
 app.register_blueprint(simulacao_bp)
+
+app.config["PALPITE_SERVICE"] = PalpiteService(_repo_palpite, _repo_jogo)
+app.register_blueprint(palpites_bp)
+
+app.config["RANKING_SERVICE"] = RankingService(_repo_palpite, _repo_usuario)
+app.register_blueprint(ranking_bp)
+
+app.config["SESSION_TOKENS"] = session_tokens
+app.config["USER_SETTINGS"] = {}
+app.register_blueprint(configuracoes_bp)
+app.register_blueprint(perfil_bp)
 
 
 def carregar_jogos_iniciais():
@@ -60,12 +121,14 @@ def carregar_jogos_iniciais():
     for selecao_a, selecao_b, hora, minuto, grupo in jogos:
         horario = hoje.replace(hour=hora, minute=minuto, second=0, microsecond=0)
         service.criar_jogo(
-            selecao_a=selecao_a,
-            selecao_b=selecao_b,
-            horario=horario.isoformat(),
-            fase="Copa do Mundo",
-            estadio="Estadio GoalPoint",
-            grupo=grupo,
+            fase="grupos",
+            data_jogo=horario.date().isoformat(),
+            horario=horario.strftime("%H:%M"),
+            time_a=selecao_a,
+            time_b=selecao_b,
+            pontos_time_a=10,
+            pontos_empate=3,
+            pontos_time_b=10,
         )
 
 
@@ -76,7 +139,12 @@ def is_valid_email(email: str) -> bool:
     return bool(re.match(r"[^@]+@[^@]+\.[^@]+", email, re.IGNORECASE))
 
 def is_valid_password(password: str) -> bool:
-    return len(password) >= 6
+    valido, _ = validar_forca_senha(password)
+    return valido
+
+
+def _buscar_usuario_por_email(email: str):
+    return app.config["CADASTRO_SERVICE"]._repo.buscar_por_email(email)
 
 
 @app.route("/")
@@ -84,12 +152,30 @@ def index():
     return jsonify({"status": "ok", "message": "API rodando."})
 
 
-@app.route("/login", methods=["POST"])
+@app.route("/uploads/profile_pictures/<path:filename>")
+def arquivos_foto_perfil(filename):
+    return send_from_directory(os.path.join(app.root_path, "uploads", "profile_pictures"), filename)
+
+
+@app.errorhandler(405)
+def method_not_allowed(error):
+    return jsonify({
+        "success": False,
+        "error": "Metodo nao permitido para esta URL.",
+        "method": request.method,
+        "path": request.path,
+    }), 405
+
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    """
-    POST /login
-    Body JSON: {"email": "...", "password": "..."}
-    """
+    if request.method == "GET":
+        return jsonify({
+            "success": True,
+            "message": "Endpoint de login ativo. Envie email e password via POST.",
+        }), 200
+
+    
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"success": False, "error": "Corpo da requisição deve ser JSON."}), 400
@@ -101,27 +187,53 @@ def login():
         return jsonify({"success": False, "error": "Email inválido."}), 400
 
     if not password or not is_valid_password(password):
-        return jsonify({"success": False, "error": "Senha deve ter pelo menos 6 caracteres."}), 400
+        return jsonify({
+            "success": False,
+            "error": "Senha deve ter pelo menos 5 caracteres, uma letra ou numero e um caractere especial.",
+        }), 400
 
-    user = users.get(email)
-    if not user or not check_password_hash(user["password_hash"], password):
+    usuario = _buscar_usuario_por_email(email)
+    if usuario:
+        senha_correta = verificar_senha(password, usuario.senha_hash)
+        nome_usuario = usuario.nome
+        usuario_resposta = usuario.to_dict()
+    else:
+        user = users.get(email)
+        senha_correta = bool(user and check_password_hash(user["password_hash"], password))
+        nome_usuario = user["name"] if user else None
+        usuario_resposta = {"email": email, "name": user["name"]} if user else None
+
+    if not usuario and not users.get(email):
+        return jsonify({
+            "success": False,
+            "error": "Aparentemente voce ainda nao realizou o cadastro.",
+        }), 404
+
+    if not senha_correta:
         return jsonify({"success": False, "error": "Email ou senha incorretos."}), 401
 
     session_token = secrets.token_urlsafe(32)
+    session_tokens[session_token] = email
     return jsonify({
         "success": True,
-        "message": f"Bem-vindo, {user['name']}!",
+        "message": f"Bem-vindo, {nome_usuario}!",
         "session_token": session_token,
-        "user": {"email": email, "name": user["name"]}
+        "user": usuario_resposta,
     }), 200
 
 
-@app.route("/forgot-password", methods=["POST"])
+@app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     """
     POST /forgot-password
     Body JSON: {"email": "..."}
     """
+    if request.method == "GET":
+        return jsonify({
+            "success": True,
+            "message": "Endpoint de recuperacao de senha ativo. Envie email via POST.",
+        }), 200
+
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"success": False, "error": "Corpo da requisição inválido."}), 400
@@ -150,12 +262,14 @@ def forgot_password():
     }), 200
 
 
-@app.route("/reset-password", methods=["POST"])
+@app.route("/reset-password", methods=["GET", "POST"])
 def reset_password():
-    """
-    POST /reset-password
-    Body JSON: {"token": "...", "new_password": "..."}
-    """
+    if request.method == "GET":
+        return jsonify({
+            "success": True,
+            "message": "Endpoint de redefinicao de senha ativo. Envie token e new_password via POST.",
+        }), 200
+
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"success": False, "error": "Corpo da requisição inválido."}), 400
@@ -167,7 +281,10 @@ def reset_password():
         return jsonify({"success": False, "error": "Token necessário."}), 400
 
     if not new_password or not is_valid_password(new_password):
-        return jsonify({"success": False, "error": "A nova senha deve ter pelo menos 6 caracteres."}), 400
+        return jsonify({
+            "success": False,
+            "error": "A nova senha deve ter pelo menos 5 caracteres, uma letra ou numero e um caractere especial.",
+        }), 400
 
     entry = reset_tokens.get(token)
     if not entry:

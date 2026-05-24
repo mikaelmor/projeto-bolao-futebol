@@ -25,6 +25,7 @@ class Usuario:
     cpf: str
     senha_hash: str
     id: int | None = None
+    foto_perfil_url: str | None = None
     criado_em: datetime = field(default_factory=datetime.utcnow)
     ativo: bool=True
 
@@ -34,6 +35,7 @@ class Usuario:
             "nome": self.nome,
             "email": self.email,
             "cpf_mascarado": self._mascarar_cpf(),
+            "foto_perfil_url": self.foto_perfil_url,
             "ativo": self.ativo,
             "criado_em": self.criado_em.isoformat()
         }
@@ -65,8 +67,8 @@ class EmailInvalido(ErroCadastro):
         super().__init__("Email inválido.", campo="email")
 
 class SenhaFraca(ErroCadastro):
-    def __init__(self):
-        super().__init__("A senha deve ter pelo menos 6 caracteres", campo="senha")
+    def __init__(self, mensagem: str = "A senha deve ter pelo menos 5 caracteres e um caractere especial"):
+        super().__init__(mensagem, campo="senha")
 
 class UsuarioJaExiste(ErroCadastro):
     def __init__(self, campo:str):

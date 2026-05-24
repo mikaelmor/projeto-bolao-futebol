@@ -25,6 +25,7 @@ class SimulacaoService:
         self._jogo_service = jogo_service
         self._simulacoes: dict[int, dict] = {}
         self._palpites: dict[int, dict[str, str]] = {}
+        self._placares_finalizados: dict[int, tuple[int, int]] = {}
 
     def listar_jogos(self) -> list[dict]:
         jogos = self._jogo_service.listar_todos()
@@ -32,7 +33,7 @@ class SimulacaoService:
 
     def registrar_palpite(self, jogo_id: int, usuario_id: str, escolha: str) -> dict:
         jogo = self._jogo_service.buscar_jogo(jogo_id)
-        if jogo["status"] != "agendado":
+        if jogo["status"] not in ("agendado", "disponivel"):
             raise ErroJogo("Palpites encerrados para este jogo.", campo="status")
 
         if escolha not in ("time1", "draw", "time2"):
@@ -52,7 +53,7 @@ class SimulacaoService:
 
     def remover_palpite(self, jogo_id: int, usuario_id: str) -> dict:
         jogo = self._jogo_service.buscar_jogo(jogo_id)
-        if jogo["status"] != "agendado":
+        if jogo["status"] not in ("agendado", "disponivel"):
             raise ErroJogo("Palpites encerrados para este jogo.", campo="status")
 
         usuario_id = (usuario_id or "").strip()
@@ -85,13 +86,14 @@ class SimulacaoService:
         jogo = self._jogo_service.buscar_jogo(jogo_id)
         simulacao = self._simulacoes.get(jogo_id)
         placar_final = simulacao["placar_final"] if simulacao else random.choice(PLACARES_POSSIVEIS)
+        resultado = self._resultado_por_placar(placar_final)
 
         jogo = self._jogo_service.registrar_resultado(
             jogo_id,
-            placar_final[0],
-            placar_final[1],
+            resultado,
         )
         self._simulacoes.pop(jogo_id, None)
+        self._placares_finalizados[jogo_id] = placar_final
         return self._com_simulacao(jogo)
 
     def atualizar_duracao(self, jogo_id: int, duracao_segundos: int) -> dict:
@@ -106,8 +108,20 @@ class SimulacaoService:
         return self._com_simulacao(self._jogo_service.buscar_jogo(jogo_id))
 
     def _com_simulacao(self, jogo: dict) -> dict:
+        jogo = self._normalizar_jogo(jogo)
         simulacao = self._simulacoes.get(jogo["id"])
         if not simulacao:
+            placar_finalizado = self._placares_finalizados.get(jogo["id"])
+            if placar_finalizado:
+                jogo = {
+                    **jogo,
+                    "placar": {
+                        "selecao_a": placar_finalizado[0],
+                        "selecao_b": placar_finalizado[1],
+                        "display": f'{jogo["selecao_a"]} {placar_finalizado[0]} x {placar_finalizado[1]} {jogo["selecao_b"]}',
+                    },
+                    "vencedor": self._vencedor_por_placar(jogo, placar_finalizado),
+                }
             return {
                 **jogo,
                 "simulacao": None,
@@ -136,6 +150,51 @@ class SimulacaoService:
             },
             "palpites_total": len(self._palpites.get(jogo["id"], {})),
         }
+
+    @staticmethod
+    def _normalizar_jogo(jogo: dict) -> dict:
+        if "id" in jogo and "selecao_a" in jogo:
+            return jogo
+
+        status_map = {
+            "disponivel": "agendado",
+            "em_andamento": "em_andamento",
+            "finalizado": "encerrado",
+            "cancelado": "cancelado",
+        }
+        data_jogo = jogo.get("data_jogo", "")
+        horario = jogo.get("horario", "")
+
+        return {
+            "id": jogo.get("id_jogo"),
+            "selecao_a": jogo.get("time_a"),
+            "selecao_b": jogo.get("time_b"),
+            "horario": f"{data_jogo}T{horario}:00" if data_jogo and horario and len(horario) == 5 else horario,
+            "fase": "Copa do Mundo",
+            "estadio": "Estadio GoalPoint",
+            "grupo": None,
+            "status": status_map.get(jogo.get("status"), jogo.get("status")),
+            "placar": None,
+            "vencedor": None,
+            "criado_em": None,
+            "pontuacao": jogo.get("pontuacao"),
+        }
+
+    @staticmethod
+    def _resultado_por_placar(placar: tuple[int, int]) -> str:
+        if placar[0] > placar[1]:
+            return "time_a"
+        if placar[1] > placar[0]:
+            return "time_b"
+        return "empate"
+
+    @staticmethod
+    def _vencedor_por_placar(jogo: dict, placar: tuple[int, int]) -> str:
+        if placar[0] > placar[1]:
+            return jogo["selecao_a"]
+        if placar[1] > placar[0]:
+            return jogo["selecao_b"]
+        return "empate"
 
     @staticmethod
     def _normalizar_duracao(duracao_segundos: int) -> int:

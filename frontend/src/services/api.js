@@ -66,11 +66,57 @@ export const resetPassword = ({ token, new_password }) => {
   });
 };
 
+const authHeaders = () => {
+  const token = localStorage.getItem("session_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export const sendSupportQuestion = (mensagem) => {
   return requestJson("/api/suporte/enviar-duvida", {
     method: "POST",
     body: JSON.stringify({ mensagem }),
   });
+};
+
+export const fetchUserSettings = () => {
+  return requestJson("/api/configuracoes/me", {
+    headers: authHeaders(),
+  });
+};
+
+export const saveUserSettings = ({ nome, email, senhaAtual, novaSenha, confirmarSenha, favorito, notificacoes }) => {
+  return requestJson("/api/configuracoes/me", {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify({ nome, email, senhaAtual, novaSenha, confirmarSenha, favorito, notificacoes }),
+  });
+};
+
+export const fetchUserProfile = () => {
+  return requestJson("/api/perfil/me", {
+    headers: authHeaders(),
+  });
+};
+
+export const uploadProfilePhoto = (file) => {
+  const formData = new FormData();
+  formData.append("foto", file);
+
+  return fetch("/api/perfil/foto", {
+    method: "POST",
+    headers: authHeaders(),
+    body: formData,
+  }).then(async (response) => {
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || data.erro || "Erro ao enviar foto de perfil");
+    }
+    return data;
+  });
+};
+
+export const fetchRanking = () => {
+  return requestJson("/api/ranking/");
 };
 
 export const fetchSimulatedGames = () => {

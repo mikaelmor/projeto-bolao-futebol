@@ -22,6 +22,14 @@ class RepositorioUsuario(ABC):
     def buscar_por_id(self, id: int) -> Usuario | None:
         ...
 
+    @abstractmethod
+    def atualizar(self, usuario: Usuario) -> Usuario:
+        ...
+
+    @abstractmethod
+    def listar_todos(self) -> list[Usuario]:
+        ...
+
 
 class RepositorioEmMemoria(RepositorioUsuario):
     def __init__(self):
@@ -48,3 +56,10 @@ class RepositorioEmMemoria(RepositorioUsuario):
     
     def buscar_por_id(self, id: int) -> Usuario|None:
         return self._usuarios.get(id)
+
+    def atualizar(self, usuario: Usuario) -> Usuario:
+        self._usuarios[usuario.id] = usuario
+        return usuario
+
+    def listar_todos(self) -> list[Usuario]:
+        return list(self._usuarios.values())

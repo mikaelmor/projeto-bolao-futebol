@@ -25,16 +25,19 @@ class RankingService:
             if palpite.acertou:
                 agregado[uid]["acertos"] += 1
 
-        if not agregado:
-            return []
+        for usuario in self._repo_usuario.listar_todos():
+            if usuario.id not in agregado:
+                agregado[usuario.id] = {"pontuacao_total": 0, "acertos": 0, "total_palpites": 0}
 
         linhas = []
         for uid, stats in agregado.items():
             usuario = self._repo_usuario.buscar_por_id(uid)
             nome = usuario.nome if usuario else f"Usuário {uid}"
+            foto_perfil_url = usuario.foto_perfil_url if usuario else None
             linhas.append({
                 "id_usuario":      uid,
                 "nome":            nome,
+                "foto_perfil_url": foto_perfil_url,
                 "pontuacao_total": stats["pontuacao_total"],
                 "acertos":         stats["acertos"],
                 "total_palpites":  stats["total_palpites"],

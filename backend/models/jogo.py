@@ -4,12 +4,6 @@ from enum import Enum
 
 
 class StatusJogo(str, Enum):
-    AGENDADO     = "agendado"      
-    EM_ANDAMENTO = "em_andamento" #palpites bloqueados
-    ENCERRADO    = "encerrado"
-    CANCELADO    = "cancelado"
-
-class StatusJogo(str, Enum):
     DISPONIVEL   = "disponivel"    # aberto para palpites
     EM_ANDAMENTO = "em_andamento"  # palpites bloqueados
     FINALIZADO   = "finalizado"

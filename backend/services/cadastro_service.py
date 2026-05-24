@@ -9,7 +9,7 @@ from models.usuario import(
 )
 
 from models.repositorio import RepositorioUsuario
-from senha import gerar_senha_temporaria, hash_senha, validar_forca_senha
+from utils.senha import gerar_senha_temporaria, hash_senha, validar_forca_senha
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -68,7 +68,7 @@ class CadastroService:
         if senha is not None:
             valido, msg = validar_forca_senha(senha)
             if not valido:
-                raise SenhaFraca()
+                raise SenhaFraca(msg)
             
     def _verificar_duplicidade(self, email: str, cpf: str):
 

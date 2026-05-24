@@ -22,6 +22,7 @@ CREATE TABLE usuarios (
   email         VARCHAR(150) NOT NULL UNIQUE,
   cpf           CHAR(11) NOT NULL UNIQUE,
   senha_hash    VARCHAR(255) NOT NULL,
+  foto_perfil_url VARCHAR(255) NULL,
   data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT chk_usuarios_cpf_formato CHECK (cpf REGEXP '^[0-9]{11}$')
 );
@@ -87,10 +88,10 @@ CREATE TABLE faq (
 --  - Favorito vs AzarÃ£o: favorito=5, empate=3, azarÃ£o=15
 -- ============================================================
 INSERT INTO jogos (fase, data_jogo, horario, time_a, time_b, status, pontos_time_a, pontos_empate, pontos_time_b) VALUES
-('grupos', '2026-06-10', '14:00:00', 'Brasil',  'Argentina', 'disponivel', 10, 3, 10),
-('grupos', '2026-06-10', '15:00:00', 'Holanda', 'Portugal',  'disponivel', 10, 3, 10),
-('grupos', '2026-06-10', '16:05:00', 'Catar',   'Espanha',   'disponivel', 15, 3,  5),
-('grupos', '2026-06-10', '17:00:00', 'IrÃ£',     'EUA',       'disponivel', 10, 3, 10);
+('grupos', '2026-05-26', '14:30:00', 'Brasil',  'Argentina', 'disponivel', 10, 3, 10),
+('grupos', '2026-05-26', '15:40:00', 'Holanda', 'Portugal',  'disponivel', 10, 3, 10),
+('grupos', '2026-05-26', '16:05:00', 'Catar',   'Espanha',   'disponivel', 15, 3,  5),
+('grupos', '2026-05-26', '16:35:00', 'IrÃ',     'EUA',       'disponivel', 10, 3, 10);
 
 -- ============================================================
 --  QUERIES ÃšTEIS PARA O BACK-END (Flask)

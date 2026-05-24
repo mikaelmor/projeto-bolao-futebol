@@ -1,145 +1,107 @@
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from extensions import db
-from models.game import Game
-from models.bet import Bet
-from models.user import User
-from datetime import datetime, timedelta
+from flask import Blueprint, current_app, jsonify, request
 
-admin_bp = Blueprint("admin", __name__)
+from models.jogo import ErroJogo
+from models.palpite import ErroPalpite
+from services.jogo_service import JogoService
 
-def require_admin():
-    user_id = int(get_jwt_identity())
-    user = User.query.get(user_id)
-    if not user or not user.is_admin:
-        return None, (jsonify({"error": "Acesso negado"}), 403)
-    return user, None
+admin_bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 
-# ── Set countdown timer (game stays "pre" until admin starts it) ──────────────
-@admin_bp.route("/game/<int:game_id>/timer", methods=["POST"])
-@jwt_required()
-def set_timer(game_id):
-    _, err = require_admin()
-    if err: return err
 
-    data    = request.get_json()
-    minutes = data.get("minutes", 5)
+def _jogo_service() -> JogoService:
+    return current_app.config["JOGO_SERVICE"]
 
-    game = Game.query.get_or_404(game_id)
-    game.starts_at = datetime.utcnow() + timedelta(minutes=minutes)
-    db.session.commit()
-    return jsonify(game.to_dict())
 
-# ── Start game (locks betting) ────────────────────────────────────────────────
-@admin_bp.route("/game/<int:game_id>/start", methods=["POST"])
-@jwt_required()
-def start_game(game_id):
-    _, err = require_admin()
-    if err: return err
+def _palpite_service():
+    return current_app.config.get("PALPITE_SERVICE")
 
-    game = Game.query.get_or_404(game_id)
-    if game.status != "pre":
-        return jsonify({"error": "Jogo não está em pré-jogo"}), 400
 
-    game.status = "live"
-    db.session.commit()
-    return jsonify(game.to_dict())
+def _cadastro_service():
+    return current_app.config["CADASTRO_SERVICE"]
 
-# ── Finish game and set winner ────────────────────────────────────────────────
-@admin_bp.route("/game/<int:game_id>/finish", methods=["POST"])
-@jwt_required()
-def finish_game(game_id):
-    _, err = require_admin()
-    if err: return err
 
-    data   = request.get_json()
-    winner = data.get("winner")   # "1" | "X" | "2"
+def _listar_usuarios() -> list[dict]:
+    repo = _cadastro_service()._repo
+    usuarios = getattr(repo, "_usuarios", {})
+    return [usuario.to_dict() for usuario in usuarios.values()]
 
-    if winner not in ("1", "X", "2"):
-        return jsonify({"error": "Vencedor inválido"}), 400
 
-    game = Game.query.get_or_404(game_id)
-    if game.status != "live":
-        return jsonify({"error": "Jogo não está ao vivo"}), 400
+def _buscar_usuario(id_usuario: int):
+    repo = _cadastro_service()._repo
+    return repo.buscar_por_id(id_usuario)
 
-    game.status = "finished"
-    game.winner = winner
 
-    # Award points to winners
-    odd_map = {"1": game.odd1, "X": game.oddX, "2": game.odd2}
-    reward  = odd_map[winner]
+def _normalizar_resultado(resultado: str | None) -> str | None:
+    mapa = {
+        "1": "time_a",
+        "x": "empate",
+        "2": "time_b",
+        "time_a": "time_a",
+        "empate": "empate",
+        "time_b": "time_b",
+    }
+    if resultado is None:
+        return None
+    return mapa.get(str(resultado).strip().lower())
 
-    bets = Bet.query.filter_by(game_id=game_id, settled=False).all()
-    for bet in bets:
-        bet.settled = True
-        if bet.choice == winner:
-            bet.won = True
-            user = User.query.get(bet.user_id)
-            user.points += bet.points_bet + reward   # return stake + winnings
-        else:
-            bet.won = False
 
-    db.session.commit()
-    return jsonify({"game": game.to_dict(), "bets_settled": len(bets)})
+@admin_bp.post("/game/<int:id_jogo>/start")
+def start_game(id_jogo: int):
+    try:
+        jogo = _jogo_service().iniciar_jogo(id_jogo)
+        return jsonify(jogo), 200
+    except ErroJogo as erro:
+        return jsonify(erro.to_dict()), 400
 
-# ── List all users (for admin dashboard) ─────────────────────────────────────
-@admin_bp.route("/users", methods=["GET"])
-@jwt_required()
+
+@admin_bp.post("/game/<int:id_jogo>/finish")
+def finish_game(id_jogo: int):
+    dados = request.get_json(silent=True) or {}
+    resultado = _normalizar_resultado(dados.get("winner") or dados.get("resultado"))
+
+    if not resultado:
+        return jsonify({"erro": "Informe winner/resultado: 1, X, 2, time_a, empate ou time_b."}), 422
+
+    try:
+        jogo = _jogo_service().registrar_resultado(id_jogo, resultado)
+        palpites_avaliados = []
+        palpite_service = _palpite_service()
+        if palpite_service:
+            palpites_avaliados = palpite_service.avaliar_palpites_do_jogo(id_jogo)
+
+        return jsonify({
+            "jogo": jogo,
+            "palpites_avaliados": len(palpites_avaliados),
+        }), 200
+    except (ErroJogo, ErroPalpite) as erro:
+        return jsonify(erro.to_dict()), 400
+
+
+@admin_bp.get("/users")
 def list_users():
-    _, err = require_admin()
-    if err: return err
+    usuarios = _listar_usuarios()
+    return jsonify({"total": len(usuarios), "usuarios": usuarios}), 200
 
-    users = User.query.all()
-    return jsonify([u.to_dict() for u in users])
 
-# ── Get a single user's bet history (for profile modal) ──────────────────────
-@admin_bp.route("/users/<int:target_id>/bets", methods=["GET"])
-@jwt_required()
-def user_bets(target_id):
-    _, err = require_admin()
-    if err: return err
+@admin_bp.get("/users/<int:id_usuario>/bets")
+def user_bets(id_usuario: int):
+    usuario = _buscar_usuario(id_usuario)
+    if not usuario:
+        return jsonify({"erro": "Usuario nao encontrado.", "campo": "id_usuario"}), 404
 
-    user = User.query.get_or_404(target_id)
-    bets = Bet.query.filter_by(user_id=target_id).all()
+    palpite_service = _palpite_service()
+    if not palpite_service:
+        return jsonify({
+            "usuario": usuario.to_dict(),
+            "palpites": [],
+            "total_palpites": 0,
+            "acertos": 0,
+            "pontuacao_total": 0,
+        }), 200
 
-    result = []
-    for bet in bets:
-        game = Game.query.get(bet.game_id)
-        choice_label = {
-            "1": game.time1,
-            "X": "Empate",
-            "2": game.time2,
-        }.get(bet.choice, bet.choice)
-
-        result.append({
-            "id":         bet.id,
-            "game":       f"{game.time1} x {game.time2}",
-            "team":       choice_label,
-            "choice":     bet.choice,
-            "points_bet": bet.points_bet,
-            "settled":    bet.settled,
-            "won":        bet.won,
-        })
-
-    palpites = len(result)
-    acertos  = sum(1 for b in result if b["won"])
-
+    palpites = palpite_service.palpites_do_usuario(id_usuario)
+    pontuacao = palpite_service.pontuacao_total(id_usuario)
     return jsonify({
-        "user":     user.to_dict(),
-        "bets":     result,
+        "usuario": usuario.to_dict(),
         "palpites": palpites,
-        "acertos":  acertos,
-        "win_rate": round((acertos / palpites * 100)) if palpites > 0 else 0,
-    })
-
-# ── Promote a user to admin ───────────────────────────────────────────────────
-@admin_bp.route("/promote/<int:user_id>", methods=["POST"])
-@jwt_required()
-def promote(user_id):
-    _, err = require_admin()
-    if err: return err
-
-    user = User.query.get_or_404(user_id)
-    user.is_admin = True
-    db.session.commit()
-    return jsonify(user.to_dict())
+        **pontuacao,
+    }), 200

@@ -166,6 +166,11 @@
   font-weight: 700;
   flex-shrink: 0;
 }
+
+img.card-avatar {
+  object-fit: cover;
+}
+
 .card.first .card-avatar { width: 68px; height: 68px; }
 
 .card-name {
@@ -234,6 +239,18 @@
   font-size: 0.95rem;
   flex-shrink: 0;
   border: 1.5px solid rgba(255,255,255,0.12);
+  object-fit: cover;
+}
+
+.ranking-status {
+  color: rgba(255,255,255,0.72);
+  text-align: center;
+  margin: -1rem 0 2rem;
+  font-size: 0.9rem;
+}
+
+.ranking-error {
+  color: #ffb4b4;
 }
 
 .rank-name {

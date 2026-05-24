@@ -55,8 +55,8 @@ class TestCadastrar:
     def test_email_duplicado(self, service):
         service.cadastrar(**DADOS_VALIDOS)
         with pytest.raises(UsuarioJaExiste) as exc:
-            service.cadastrar(**{**DADOS_VALIDOS, "cpf": "275.477.738-13"})
-        assert exc.value.campo == "e-mail"
+            service.cadastrar(**{**DADOS_VALIDOS, "cpf": "529.982.247-25"})
+        assert exc.value.campo == "email"
 
     def test_cpf_duplicado(self, service):
         service.cadastrar(**DADOS_VALIDOS)

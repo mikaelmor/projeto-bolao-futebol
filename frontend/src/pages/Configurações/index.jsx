@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import React from "react";
 import { useEffect, useState } from "react";
 import ButtonConfig from "../../ui/ButtonConfig";
-import CheckboxConfig from "../../ui/CheckboxConfig";
+import { fetchUserSettings, saveUserSettings } from "../../services/api";
 
 const Configurações = () => {
 
@@ -21,16 +21,24 @@ const Configurações = () => {
    const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("user_data");
-    if (savedUser) {
-      const parsed = JSON.parse(savedUser);
-      setForm((prev) => ({
-        ...prev,
-        nome: parsed.nome || "",
-        email: parsed.email || "",
-      }));
-    }
-  }, []);
+    const carregarConfiguracoes = async () => {
+      try {
+        const data = await fetchUserSettings();
+        setForm((prev) => ({
+          ...prev,
+          nome: data.nome || "",
+          email: data.email || "",
+          favorito: data.favorito || "Brasil",
+          notificacoes: data.notificacoes ?? true,
+        }));
+      } catch (error) {
+        alert(error.message);
+        navigate("/login");
+      }
+    };
+
+    carregarConfiguracoes();
+  }, [navigate]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -41,17 +49,34 @@ const Configurações = () => {
     });
   };
 
-  const handleSave = () => {
-    const userData = {
-      nome: form.nome,
-      email: form.email,
-      favorito: form.favorito,
-    };
+  const handleSave = async () => {
+    try {
+      const data = await saveUserSettings({
+        nome: form.nome,
+        email: form.email,
+        senhaAtual: form.senhaAtual,
+        novaSenha: form.novaSenha,
+        confirmarSenha: form.confirmarSenha,
+        favorito: form.favorito,
+      });
 
-    localStorage.setItem("user_data", JSON.stringify(userData));
+      localStorage.setItem("user", JSON.stringify({
+        nome: data.configuracoes.nome,
+        email: data.configuracoes.email,
+      }));
 
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+      setForm((prev) => ({
+        ...prev,
+        nome: data.configuracoes.nome,
+        senhaAtual: "",
+        novaSenha: "",
+        confirmarSenha: "",
+      }));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
   return (
@@ -66,6 +91,12 @@ const Configurações = () => {
         <h1 className="text-2xl font-bold tracking-wide">
           Configurações
         </h1>
+
+        {saved && (
+          <div className="bg-lime-500/20 border border-lime-400 text-lime-100 p-3 rounded-lg">
+            alterações realizadas com sucesso
+          </div>
+        )}
 
        
         <div className="bg-white/5 backdrop-blur-md border-4 border-white/10 p-6 rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.05)] space-y-3 hover:border-lime-400 transition">
@@ -82,7 +113,7 @@ const Configurações = () => {
           <input
             name="email"
             value={form.email}
-            onChange={handleChange}
+            readOnly
             placeholder="Email"
             className="w-full p-2 rounded bg-black/40 focus:outline-none focus:ring-2 focus:ring-lime-400 transition"
            style={{fontFamily : "sans-serif"}}/>
@@ -95,18 +126,27 @@ const Configurações = () => {
 
           <input
             type="password"
+            name="senhaAtual"
+            value={form.senhaAtual}
+            onChange={handleChange}
             placeholder="Senha atual"
             className="w-full p-2 rounded bg-black/40 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
 
           <input
             type="password"
+            name="novaSenha"
+            value={form.novaSenha}
+            onChange={handleChange}
             placeholder="Nova senha"
             className="w-full p-2 rounded bg-black/40 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
 
           <input
             type="password"
+            name="confirmarSenha"
+            value={form.confirmarSenha}
+            onChange={handleChange}
             placeholder="Confirmar senha"
             className="w-full p-2 rounded bg-black/40 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
@@ -127,13 +167,7 @@ const Configurações = () => {
             <option>França</option>
           </select>
 
-          <CheckboxConfig
-            checked={form.notificacoes}
-            onChange={(e) =>
-            setForm({ ...form, notificacoes: e.target.checked })
-            }
-            label="Notificações"
-           />
+          
         </div>
 
                 
