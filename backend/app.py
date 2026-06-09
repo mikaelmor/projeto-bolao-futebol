@@ -122,13 +122,13 @@ def carregar_jogos_iniciais():
 
     hoje = datetime.now()
     jogos = [
-        ("Brasil", "Argentina", 14, 30, "Grupo A"),
-        ("Holanda", "Portugal", 15, 40, "Grupo B"),
-        ("Catar", "Espanha", 16, 5, "Grupo C"),
-        ("Ira", "EUA", 16, 35, "Grupo D"),
+        ("Brasil", "Argentina", 14, 30, "Grupo A", 10, 3, 10),
+        ("Holanda", "Portugal", 15, 40, "Grupo B", 10, 3, 10),
+        ("Catar", "Espanha", 16, 5, "Grupo C", 15, 3, 5),
+        ("Ira", "EUA", 16, 35, "Grupo D", 10, 3, 10),
     ]
 
-    for selecao_a, selecao_b, hora, minuto, grupo in jogos:
+    for selecao_a, selecao_b, hora, minuto, grupo, pontos_a, pontos_empate, pontos_b in jogos:
         horario = hoje.replace(hour=hora, minute=minuto, second=0, microsecond=0)
         service.criar_jogo(
             fase="grupos",
@@ -136,9 +136,9 @@ def carregar_jogos_iniciais():
             horario=horario.strftime("%H:%M"),
             time_a=selecao_a,
             time_b=selecao_b,
-            pontos_time_a=10,
-            pontos_empate=3,
-            pontos_time_b=10,
+            pontos_time_a=pontos_a,
+            pontos_empate=pontos_empate,
+            pontos_time_b=pontos_b,
         )
 
 

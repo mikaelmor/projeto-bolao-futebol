@@ -44,6 +44,12 @@ const formatTime = (isoDate) => {
   });
 };
 
+const pontosDoJogo = (jogo) => ({
+  timeA: jogo.pontuacao?.time_a ?? 10,
+  empate: jogo.pontuacao?.empate ?? 3,
+  timeB: jogo.pontuacao?.time_b ?? 10,
+});
+
 export default function JogoCard({ searchTerm }) {
   const [jogos, setJogos] = useState([]);
   const [palpites, setPalpites] = useState(() => {
@@ -166,6 +172,7 @@ export default function JogoCard({ searchTerm }) {
         const placarA = jogo.placar?.selecao_a ?? 0;
         const placarB = jogo.placar?.selecao_b ?? 0;
         const placar = jogo.status === "agendado" ? "X" : `${placarA} x ${placarB}`;
+        const pontos = pontosDoJogo(jogo);
 
         return (
           <div
@@ -217,7 +224,7 @@ export default function JogoCard({ searchTerm }) {
                 className={`${buttonClass(jogo.id, "time_a")} disabled:opacity-60 disabled:cursor-not-allowed`}
               >
                 <span className="relative z-10" style={{ fontFamily: "Monospace" }}>
-                  {jogo.selecao_a} <br /> 10 pontos
+                  {jogo.selecao_a} <br /> {pontos.timeA} pontos
                 </span>
                 <span className="absolute inset-0 bg-green-600 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></span>
               </button>
@@ -228,7 +235,7 @@ export default function JogoCard({ searchTerm }) {
                 className={`${buttonClass(jogo.id, "empate")} disabled:opacity-60 disabled:cursor-not-allowed`}
               >
                 <span className="relative z-10" style={{ fontFamily: "Monospace" }}>
-                  Empate <br /> 3 pontos
+                  Empate <br /> {pontos.empate} pontos
                 </span>
                 <span className="absolute inset-0 bg-green-600 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></span>
               </button>
@@ -239,7 +246,7 @@ export default function JogoCard({ searchTerm }) {
                 className={`${buttonClass(jogo.id, "time_b")} disabled:opacity-60 disabled:cursor-not-allowed`}
               >
                 <span className="relative z-10" style={{ fontFamily: "Monospace" }}>
-                  {jogo.selecao_b} <br /> 10 pontos
+                  {jogo.selecao_b} <br /> {pontos.timeB} pontos
                 </span>
                 <span className="absolute inset-0 bg-green-600 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></span>
               </button>
