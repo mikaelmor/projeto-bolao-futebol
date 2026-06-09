@@ -17,6 +17,13 @@ PLACARES_POSSIVEIS = [
     (3, 1),
     (1, 1),
     (0, 3),
+    (3, 3),
+]
+
+PLACARES_EMPATE = [
+    (1, 1),
+    (2, 2),
+    (3, 3),
 ]
 
 
@@ -247,8 +254,8 @@ class SimulacaoService:
         if resultado == "time_b":
             return gols_a, max(gols_b, gols_a + 1)
 
-        gols_empate = max(gols_a, gols_b)
-        return gols_empate, gols_empate
+        placares_validos = [placar for placar in PLACARES_EMPATE if placar[0] >= max(gols_a, gols_b)]
+        return random.choice(placares_validos or [PLACARES_EMPATE[-1]])
 
     @staticmethod
     def _gerar_gols(placar_final: tuple[int, int], duracao_segundos: int) -> list[dict]:
